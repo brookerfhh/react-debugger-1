@@ -496,15 +496,20 @@ function commitHookEffectListUnmount(
 }
 
 function commitHookEffectListMount(tag: number, finishedWork: Fiber) {
+  // 获取任务队列
   const updateQueue: FunctionComponentUpdateQueue | null = (finishedWork.updateQueue: any);
+  // 获取lastEffect
   const lastEffect = updateQueue !== null ? updateQueue.lastEffect : null;
+  // 因为函数组件中是可以多次调用钩子函数。所以要循环
   if (lastEffect !== null) {
+    // 获取要执行的副作用
     const firstEffect = lastEffect.next;
     let effect = firstEffect;
     do {
       if ((effect.tag & tag) === tag) {
         // Mount
         const create = effect.create;
+        // 返回值就是 清理函数
         effect.destroy = create();
 
         if (__DEV__) {
@@ -608,6 +613,9 @@ function commitLayoutEffectOnFiber(
   finishedWork: Fiber,
   committedLanes: Lanes,
 ): void {
+  // flags 在commit第二个阶段已经被重置为1 了
+  // 如果类组件函数中 调用了生命周期函数
+  // 或者函数组件调用了 useEffect，判断条件成立
   if ((finishedWork.flags & (Update | Callback)) !== NoFlags) {
     switch (finishedWork.tag) {
       case FunctionComponent:
@@ -634,8 +642,10 @@ function commitLayoutEffectOnFiber(
         break;
       }
       case ClassComponent: {
+        // 类组件实例对象
         const instance = finishedWork.stateNode;
         if (finishedWork.flags & Update) {
+          // 初始渲染
           if (current === null) {
             // We could update instance props and state here,
             // but instead we rely on them being set during last render.
@@ -674,18 +684,23 @@ function commitLayoutEffectOnFiber(
             ) {
               try {
                 startLayoutEffectTimer();
+                // 调用componentDidMount
                 instance.componentDidMount();
               } finally {
                 recordLayoutEffectDuration(finishedWork);
               }
             } else {
+              // 调用componentDidMount
               instance.componentDidMount();
             }
           } else {
+            // 更新
+            // 获取旧的props
             const prevProps =
               finishedWork.elementType === finishedWork.type
                 ? current.memoizedProps
                 : resolveDefaultProps(finishedWork.type, current.memoizedProps);
+                // 获取旧的state
             const prevState = current.memoizedState;
             // We could update instance props and state here,
             // but instead we rely on them being set during last render.
@@ -744,6 +759,7 @@ function commitLayoutEffectOnFiber(
 
         // TODO: I think this is now always non-null by the time it reaches the
         // commit phase. Consider removing the type check.
+        // 获取任务队列
         const updateQueue: UpdateQueue<
           *,
         > | null = (finishedWork.updateQueue: any);
@@ -778,6 +794,10 @@ function commitLayoutEffectOnFiber(
           // We could update instance props and state here,
           // but instead we rely on them being set during last render.
           // TODO: revisit this when we implement resuming.
+          /* 
+            主要调用ReactElement渲染完成后的回调函数，
+              即render方法的第三个参数
+          */
           commitUpdateQueue(finishedWork, updateQueue, instance);
         }
         break;
@@ -1417,6 +1437,7 @@ function insertOrAppendPlacementNodeIntoContainer(
   parent: Container,
 ): void {
   const {tag} = node;
+  // 如果是普通react元素 或者 文本元素
   const isHost = tag === HostComponent || tag === HostText;
   if (isHost) {
     const stateNode = isHost ? node.stateNode : node.stateNode.instance;
@@ -2129,7 +2150,8 @@ function commitMutationEffectsOnFiber(
     }
   }
 }
-
+// dom操作执行完成，主要执行类组件和函数组件的 生命周期函数 或 钩子函数
+// commit3 commitLayoutEffects
 export function commitLayoutEffects(
   finishedWork: Fiber,
   root: FiberRoot,
@@ -2183,6 +2205,7 @@ function commitLayoutMountEffects_complete(
         resetCurrentDebugFiberInDEV();
       } else {
         try {
+          // 遍历执行 
           commitLayoutEffectOnFiber(root, current, fiber, committedLanes);
         } catch (error) {
           captureCommitPhaseError(fiber, fiber.return, error);

@@ -677,15 +677,20 @@ export function resetHasForceUpdateBeforeProcessing() {
 export function checkHasForceUpdateAfterProcessing(): boolean {
   return hasForceUpdate;
 }
-
+/* 
+  执行渲染完成之后的回调函数
+*/
 export function commitUpdateQueue<State>(
   finishedWork: Fiber,
   finishedQueue: UpdateQueue<State>,
   instance: any,
 ): void {
   // Commit the effects
+  // effect为数组，存储任务对象
   const effects = finishedQueue.effects;
+  // 重置finishedQueue.effects数组
   finishedQueue.effects = null;
+  // callback有可能为空
   if (effects !== null) {
     for (let i = 0; i < effects.length; i++) {
       const effect = effects[i];
