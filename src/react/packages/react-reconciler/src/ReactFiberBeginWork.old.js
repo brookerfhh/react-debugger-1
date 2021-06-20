@@ -250,18 +250,25 @@ if (__DEV__) {
   didWarnAboutTailOptions = {};
   didWarnAboutDefaultPropsOnFunctionComponent = {};
 }
-
+// 构建子节点
 export function reconcileChildren(
+  // 旧Fiber
   current: Fiber | null,
+  // 父级Fiber
   workInProgress: Fiber,
+  // 子级vdom对象
   nextChildren: any,
+  // 优先级
   renderLanes: Lanes,
 ) {
+  // 初始化渲染 current为null
   if (current === null) {
+    // 挂载
     // If this is a fresh new component that hasn't been rendered yet, we
     // won't update its child set by applying minimal side-effects. Instead,
     // we will add them all to the child before it gets rendered. That means
     // we can optimize this reconciliation pass by not tracking side-effects.
+    // 创建子Fiber,并赋值给workInProgress.child
     workInProgress.child = mountChildFibers(
       workInProgress,
       null,
@@ -275,6 +282,7 @@ export function reconcileChildren(
 
     // If we had any progressed work already, that is invalid at this point so
     // let's throw it out.
+    // 新旧 Fiber对比
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,
@@ -1146,6 +1154,7 @@ function pushHostRootContext(workInProgress) {
 
 function updateHostRoot(current, workInProgress, renderLanes) {
   pushHostRootContext(workInProgress);
+  // 获取更新队列
   const updateQueue = workInProgress.updateQueue;
   invariant(
     current !== null && updateQueue !== null,
@@ -1153,13 +1162,18 @@ function updateHostRoot(current, workInProgress, renderLanes) {
       'bailed out. This error is likely caused by a bug in React. Please ' +
       'file an issue.',
   );
+  // 新的props对象
   const nextProps = workInProgress.pendingProps;
+  // 上一次渲染使用的state
   const prevState = workInProgress.memoizedState;
   const prevChildren = prevState.element;
+  // 拷贝更新队列,把current.updateQueue 拷贝到 workInProgress.updateQueue
   cloneUpdateQueue(current, workInProgress);
+  // 获取updateQueue.payload 赋值给 workInProgress.memoizedState
   processUpdateQueue(workInProgress, nextProps, null, renderLanes);
+  // 获取RootFiber 的 vDom
   const nextState = workInProgress.memoizedState;
-
+  
   const root: FiberRoot = workInProgress.stateNode;
 
   if (enableCache) {
@@ -1179,17 +1193,20 @@ function updateHostRoot(current, workInProgress, renderLanes) {
 
   // Caution: React DevTools currently depends on this property
   // being called "element".
+  // RootFiber 的 子集
   const nextChildren = nextState.element;
   if (nextChildren === prevChildren) {
     resetHydrationState();
     return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
   }
+  
+  // 服务端渲染
   if (root.hydrate && enterHydrationState(workInProgress)) {
     // If we don't have any current children this might be the first pass.
     // We always try to hydrate. If this isn't a hydration pass there won't
     // be any children to hydrate which is effectively the same thing as
     // not hydrating.
-
+    
     if (supportsHydration) {
       const mutableSourceEagerHydrationData =
         root.mutableSourceEagerHydrationData;
@@ -1203,7 +1220,6 @@ function updateHostRoot(current, workInProgress, renderLanes) {
         }
       }
     }
-
     const child = mountChildFibers(
       workInProgress,
       null,
@@ -3226,6 +3242,7 @@ function beginWork(
   workInProgress: Fiber,
   renderLanes: Lanes,
 ): Fiber | null {
+
   let updateLanes = workInProgress.lanes;
 
   if (__DEV__) {
@@ -3247,6 +3264,7 @@ function beginWork(
   }
 
   if (current !== null) {
+    // current !== null 说明是更新 update
     // TODO: The factoring of this block is weird.
     if (
       enableLazyContextPropagation &&
@@ -3505,8 +3523,10 @@ function beginWork(
   // sometimes bails out later in the begin phase. This indicates that we should
   // move this assignment out of the common path and into each branch.
   workInProgress.lanes = NoLanes;
-
+  // 根据不同workInProgress.tag， 执行不同的创建Fiber
+  // 初始渲染时 第一个时3，然后时APP函数组件组件，即为 2
   switch (workInProgress.tag) {
+    // 2 函数组件第一次被渲染时是2，即IndeterminateComponent，第二次才是0，FunctionComponent
     case IndeterminateComponent: {
       return mountIndeterminateComponent(
         current,
@@ -3515,6 +3535,7 @@ function beginWork(
         renderLanes,
       );
     }
+    // 16
     case LazyComponent: {
       const elementType = workInProgress.elementType;
       return mountLazyComponent(
@@ -3525,6 +3546,7 @@ function beginWork(
         renderLanes,
       );
     }
+    // 0
     case FunctionComponent: {
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
@@ -3540,6 +3562,7 @@ function beginWork(
         renderLanes,
       );
     }
+    // 1
     case ClassComponent: {
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
@@ -3555,10 +3578,13 @@ function beginWork(
         renderLanes,
       );
     }
+    // 3 
     case HostRoot:
       return updateHostRoot(current, workInProgress, renderLanes);
+      // 5 普通的react元素
     case HostComponent:
       return updateHostComponent(current, workInProgress, renderLanes);
+      // 6 文本元素
     case HostText:
       return updateHostText(current, workInProgress);
     case SuspenseComponent:

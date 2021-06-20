@@ -133,7 +133,7 @@ function createRootImpl(
     options != null && options.unstable_strictModeLevel != null
       ? options.unstable_strictModeLevel
       : null;
-
+    // 创建fiberRoot 
   const root = createContainer(
     container,
     tag,
@@ -141,6 +141,7 @@ function createRootImpl(
     hydrationCallbacks,
     strictModeLevelOverride,
   );
+  // 标记__reactContainer 属性
   markContainerAsRoot(root.current, container);
 
   const rootContainerElement =
@@ -185,6 +186,7 @@ export function createLegacyRoot(
   container: Container,
   options?: RootOptions,
 ): RootType {
+  // 通过render 方法创建的container1即为 LegacyRoot = 0
   return new ReactDOMBlockingRoot(container, LegacyRoot, options);
 }
 

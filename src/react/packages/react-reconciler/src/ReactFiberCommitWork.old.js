@@ -267,14 +267,15 @@ function safelyCallDestroy(
 
 let focusedInstanceHandle: null | Fiber = null;
 let shouldFireAfterActiveInstanceBlur: boolean = false;
-
+// 初始化是不执行
 export function commitBeforeMutationEffects(
   root: FiberRoot,
   firstChild: Fiber,
 ) {
   focusedInstanceHandle = prepareForCommit(root.containerInfo);
-
+  // nextEffect 设置为第一个子元素
   nextEffect = firstChild;
+  // 开始循环effect链表
   commitBeforeMutationEffects_begin();
 
   // We no longer need to track the active instance fiber
@@ -286,6 +287,8 @@ export function commitBeforeMutationEffects(
 }
 
 function commitBeforeMutationEffects_begin() {
+  // 循环 effect 链
+  // 主要是调用类组件的 getSnapshotBeforeUpdate 生命周期函数
   while (nextEffect !== null) {
     const fiber = nextEffect;
 
@@ -329,6 +332,7 @@ function commitBeforeMutationEffects_complete() {
       resetCurrentDebugFiberInDEV();
     } else {
       try {
+        // 主要是执行类组件的 getSnapshotBeforeUpdate 生命周期函数
         commitBeforeMutationEffectsOnFiber(fiber);
       } catch (error) {
         captureCommitPhaseError(fiber, fiber.return, error);
@@ -362,7 +366,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
       beforeActiveInstanceBlur(finishedWork);
     }
   }
-
+  // 有flags 需要执行
   if ((flags & Snapshot) !== NoFlags) {
     setCurrentDebugFiberInDEV(finishedWork);
 
@@ -407,6 +411,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
               }
             }
           }
+          // 执行类组件的 getSnapshotBeforeUpdate 生命周期函数
           const snapshot = instance.getSnapshotBeforeUpdate(
             finishedWork.elementType === finishedWork.type
               ? prevProps
@@ -424,6 +429,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
               );
             }
           }
+          // 将getSnapshotBeforeUpdate 存到 instance.__reactInternalSnapshotBeforeUpdate属性中
           instance.__reactInternalSnapshotBeforeUpdate = snapshot;
         }
         break;
@@ -1345,18 +1351,21 @@ function getHostSibling(fiber: Fiber): ?Instance {
     }
   }
 }
-
+// 挂载DOM元素
 function commitPlacement(finishedWork: Fiber): void {
   if (!supportsMutation) {
     return;
   }
 
   // Recursively insert all host nodes into the parent.
+  // 获取非组件父级 Fiber对象，因为组件是不能作为DOM节点的
   const parentFiber = getHostParentFiber(finishedWork);
 
   // Note: these two variables *must* always be updated together.
+  // 存储父级的 dom元素
   let parent;
-  let isContainer;
+  let isContainer; // 是否是渲染容器
+  // 初始渲染时，rootFiber对象中的stateNode 存储的是 FiberRoot
   const parentStateNode = parentFiber.stateNode;
   switch (parentFiber.tag) {
     case HostComponent:
@@ -1385,13 +1394,19 @@ function commitPlacement(finishedWork: Fiber): void {
     // Clear ContentReset from the effect tag
     parentFiber.flags &= ~ContentReset;
   }
-
+  // 查看当前节点是否有下一个兄弟节点
+  // 有，则执行insertBefore
+  // 没有执行 appendChild
   const before = getHostSibling(finishedWork);
   // We only have the top Fiber that was inserted but we need to recurse down its
   // children to find all the terminal nodes.
+  // 是渲染容器
   if (isContainer) {
+    // 向父节点中追加节点  或者 将子节点插入到 before 节点的前面
     insertOrAppendPlacementNodeIntoContainer(finishedWork, before, parent);
   } else {
+    // 非渲染容器
+    // 向父节点中追加节点  或者 将子节点插入到 before 节点的前面
     insertOrAppendPlacementNode(finishedWork, before, parent);
   }
 }
@@ -1947,7 +1962,9 @@ export function commitMutationEffects(
   renderPriorityLevel: LanePriority,
   firstChild: Fiber,
 ) {
+  // 设置第一个子元素
   nextEffect = firstChild;
+  // 开启循环 链表
   commitMutationEffects_begin(root, renderPriorityLevel);
 }
 
@@ -2036,7 +2053,7 @@ function commitMutationEffects_complete(
     nextEffect = fiber.return;
   }
 }
-
+// 根据flags，匹配执行相关DOM操作
 function commitMutationEffectsOnFiber(
   finishedWork: Fiber,
   root: FiberRoot,
@@ -2067,16 +2084,20 @@ function commitMutationEffectsOnFiber(
   // bitmap value, we remove the secondary effects from the effect tag and
   // switch on that value.
   const primaryFlags = flags & (Placement | Update | Hydrating);
+  // 匹配相关操作
   outer: switch (primaryFlags) {
+    // 针对该节点以及子节点进行插入操作
     case Placement: {
       commitPlacement(finishedWork);
       // Clear the "placement" from effect tag so that we know that this is
       // inserted, before any life-cycles like componentDidMount gets called.
       // TODO: findDOMNode doesn't rely on this any more but isMounted does
       // and isMounted is deprecated anyway so we should be able to kill this.
+      // 将flags 重置为1，即已经执行完成
       finishedWork.flags &= ~Placement;
       break;
     }
+    // 插入并更新
     case PlacementAndUpdate: {
       // Placement
       commitPlacement(finishedWork);

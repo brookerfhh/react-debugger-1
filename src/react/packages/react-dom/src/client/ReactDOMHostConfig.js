@@ -487,7 +487,9 @@ export function appendChildToContainer(
   child: Instance | TextInstance,
 ): void {
   let parentNode;
+  // 判断container是否是注释节点
   if (container.nodeType === COMMENT_NODE) {
+    // 找到注释节点的父级
     parentNode = (container.parentNode: any);
     parentNode.insertBefore(child, container);
   } else {
@@ -525,7 +527,9 @@ export function insertInContainerBefore(
   child: Instance | TextInstance,
   beforeChild: Instance | TextInstance | SuspenseInstance,
 ): void {
+  // 判断container是否是注释节点
   if (container.nodeType === COMMENT_NODE) {
+    // 找到注释节点的父级节点 执行insertBefore
     (container.parentNode: any).insertBefore(child, beforeChild);
   } else {
     container.insertBefore(child, beforeChild);

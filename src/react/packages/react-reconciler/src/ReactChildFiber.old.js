@@ -258,6 +258,11 @@ function resolveLazy(lazyType) {
 // to be able to optimize each path individually by branching early. This needs
 // a compiler or we can do it manually. Helpers that don't need this branching
 // live outside of this function.
+/* 
+  shouldTrackSideEffects 标识,是否为Fiber对象添加effectTag 
+    true 添加,false 不添加
+    对于初始渲染来说,只有根组件需要添加,其他元素不需要添加,防止过多的DOM操作
+*/
 function ChildReconciler(shouldTrackSideEffects) {
   function deleteChild(returnFiber: Fiber, childToDelete: Fiber): void {
     if (!shouldTrackSideEffects) {
@@ -728,7 +733,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
     return knownKeys;
   }
-
+  // 处理子元素是数组
   function reconcileChildrenArray(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -762,14 +767,16 @@ function ChildReconciler(shouldTrackSideEffects) {
         knownKeys = warnOnInvalidKey(child, knownKeys, returnFiber);
       }
     }
-
+    // 存储第一个子元素的Fiber，最终返回的是这个
     let resultingFirstChild: Fiber | null = null;
+    // 用于循环，保存上一个创建的Fiber对象
     let previousNewFiber: Fiber | null = null;
 
     let oldFiber = currentFirstChild;
     let lastPlacedIndex = 0;
     let newIdx = 0;
     let nextOldFiber = null;
+    // 初始渲染不执行
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
       if (oldFiber.index > newIdx) {
         nextOldFiber = oldFiber;
@@ -814,22 +821,24 @@ function ChildReconciler(shouldTrackSideEffects) {
       previousNewFiber = newFiber;
       oldFiber = nextOldFiber;
     }
-
+    // 初始渲染不执行
     if (newIdx === newChildren.length) {
       // We've reached the end of the new children. We can delete the rest.
       deleteRemainingChildren(returnFiber, oldFiber);
       return resultingFirstChild;
     }
-
+    // oldFiber === null 为初始渲染
     if (oldFiber === null) {
       // If we don't have any more existing children we can choose a fast path
       // since the rest will all be insertions.
       for (; newIdx < newChildren.length; newIdx++) {
+        // 初始渲染 只为newFiber添加了index属性
         const newFiber = createChild(returnFiber, newChildren[newIdx], lanes);
         if (newFiber === null) {
           continue;
         }
         lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+        // 没有上一个节点，说明当前是第一个子节点，保存到resultingFirstChild
         if (previousNewFiber === null) {
           // TODO: Move out of the loop. This only happens for the first run.
           resultingFirstChild = newFiber;
@@ -838,6 +847,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         }
         previousNewFiber = newFiber;
       }
+      // 返回第一个子元素
       return resultingFirstChild;
     }
 
@@ -1094,9 +1104,9 @@ function ChildReconciler(shouldTrackSideEffects) {
   }
 
   function reconcileSingleElement(
-    returnFiber: Fiber,
-    currentFirstChild: Fiber | null,
-    element: ReactElement,
+    returnFiber: Fiber, // 
+    currentFirstChild: Fiber | null, // 旧的第一个子 Fiber,初始渲染null
+    element: ReactElement, // vDom
     lanes: Lanes,
   ): Fiber {
     const key = element.key;
@@ -1164,6 +1174,8 @@ function ChildReconciler(shouldTrackSideEffects) {
       created.return = returnFiber;
       return created;
     } else {
+      // 首次渲染走这个
+      // 根据ReactElement 创建Fiber对象，并返回
       const created = createFiberFromElement(element, returnFiber.mode, lanes);
       created.ref = coerceRef(returnFiber, currentFirstChild, element);
       created.return = returnFiber;
@@ -1211,8 +1223,11 @@ function ChildReconciler(shouldTrackSideEffects) {
   // itself. They will be added to the side-effect list as we pass through the
   // children and the parent.
   function reconcileChildFibers(
+    // 父Fiber对象
     returnFiber: Fiber,
+    // 旧的第一个子 Fiber,初始渲染null
     currentFirstChild: Fiber | null,
+    // 新的子 vdom对象
     newChild: any,
     lanes: Lanes,
   ): Fiber | null {
@@ -1224,20 +1239,24 @@ function ChildReconciler(shouldTrackSideEffects) {
     // Handle top level unkeyed fragments as if they were arrays.
     // This leads to an ambiguity between <>{[...]}</> and <>...</>.
     // We treat the ambiguous cases above the same.
+    // 判断vdom是否为占位组件,即是否是 Fragment 或者 <></>
     const isUnkeyedTopLevelFragment =
       typeof newChild === 'object' &&
       newChild !== null &&
       newChild.type === REACT_FRAGMENT_TYPE &&
       newChild.key === null;
+      // 如果是占位组件，则获取占位组件的子元素 作为newChild
     if (isUnkeyedTopLevelFragment) {
       newChild = newChild.props.children;
     }
 
     // Handle object types
+    // 判断newChild是否是对象类型：数组或对象
     const isObject = typeof newChild === 'object' && newChild !== null;
-
+    // 单个对象
     if (isObject) {
       switch (newChild.$$typeof) {
+        // react元素
         case REACT_ELEMENT_TYPE:
           return placeSingleChild(
             reconcileSingleElement(
@@ -1346,8 +1365,9 @@ function ChildReconciler(shouldTrackSideEffects) {
 
   return reconcileChildFibers;
 }
-
+// 更新
 export const reconcileChildFibers = ChildReconciler(true);
+// 初始渲染
 export const mountChildFibers = ChildReconciler(false);
 
 export function cloneChildFibers(

@@ -1,4 +1,4 @@
-import {React, Component} from "../CONST";
+import {React, Component, useState} from "../CONST";
 
 class ClassComponent extends Component {
   render() {
@@ -7,10 +7,12 @@ class ClassComponent extends Component {
 }
 
 function FunctionComponent({name}) {
+  const [count, setCount] = useState(0)
   return (
     <div className="function border">
       {name}
-      <button onClick={() => console.log("omg")}>click</button>
+      {count}
+      <button onClick={() => setCount(count+1)}>click</button>
     </div>
   );
 }
@@ -23,5 +25,5 @@ const jsx = (
     <ClassComponent name="class组件" />
   </div>
 );
-
+console.log('react 版本===', React.version)
 export default jsx;

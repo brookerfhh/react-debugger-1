@@ -239,6 +239,9 @@ export function resolveLazyComponentTag(Component: Function): WorkTag {
 }
 
 // This is used to create an alternate fiber to do work on.
+// 构建 workInProgress Fiber 树中的rootFiber
+// 构建完成后会替换current fiber
+// 初始渲染时 pendingProps = null
 export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
   let workInProgress = current.alternate;
   if (workInProgress === null) {
@@ -253,6 +256,7 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
       current.key,
       current.mode,
     );
+    // 属性复用
     workInProgress.elementType = current.elementType;
     workInProgress.type = current.type;
     workInProgress.stateNode = current.stateNode;
@@ -264,8 +268,9 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
       workInProgress._debugOwner = current._debugOwner;
       workInProgress._debugHookTypes = current._debugHookTypes;
     }
-
+    // alternate 指向 current
     workInProgress.alternate = current;
+    // 互相引用
     current.alternate = workInProgress;
   } else {
     workInProgress.pendingProps = pendingProps;

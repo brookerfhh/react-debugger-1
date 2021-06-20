@@ -266,16 +266,19 @@ export function createContainer(
     strictModeLevelOverride,
   );
 }
-
+/* 
+  创建一个任务，并将任务放到任务队列中
+*/
 export function updateContainer(
-  element: ReactNodeList,
-  container: OpaqueRoot,
-  parentComponent: ?React$Component<any, any>,
-  callback: ?Function,
+  element: ReactNodeList, // 要渲染的ReactElement
+  container: OpaqueRoot, // fiberRoot对象
+  parentComponent: ?React$Component<any, any>, // 父组件。初始渲染时为null
+  callback: ?Function, //
 ): Lane {
   if (__DEV__) {
     onScheduleRoot(container, element);
   }
+  // current 当前fiber，初始化时 为 fiberRoot对应的 rootFiber
   const current = container.current;
   const eventTime = requestEventTime();
   if (__DEV__) {
@@ -290,7 +293,7 @@ export function updateContainer(
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);
   }
-
+  // 设置FiberRoot.context, 首次执行返回时一个emptyContext，即{}
   const context = getContextForSubtree(parentComponent);
   if (container.context === null) {
     container.context = context;
@@ -314,10 +317,19 @@ export function updateContainer(
       );
     }
   }
-
+  // 创建update 任务
+  /* const update: Update<*> = {
+    eventTime,
+    lane,
+    tag: UpdateState,
+    payload: null,
+    callback: null,
+    next: null,
+  }; */
   const update = createUpdate(eventTime, lane);
   // Caution: React DevTools currently depends on this property
   // being called "element".
+  // 把将要更新的任务挂载到payload中
   update.payload = {element};
 
   callback = callback === undefined ? null : callback;
@@ -333,13 +345,16 @@ export function updateContainer(
     }
     update.callback = callback;
   }
-
+  // 将update任务对象 加入到当前Fiber的更新队列当中，即updateQueue
+  // 待执行的任务都会被存储在fiber.updateQueue.shared.pending
   enqueueUpdate(current, update, lane);
+  // 调度和更新 current 对象, 即开始执行任务
+  // 这一步执行后 dom已经挂载了
   const root = scheduleUpdateOnFiber(current, lane, eventTime);
   if (root !== null) {
     entangleTransitions(root, current, lane);
   }
-
+  // 返回优先级
   return lane;
 }
 

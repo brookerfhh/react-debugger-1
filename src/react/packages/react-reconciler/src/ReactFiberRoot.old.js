@@ -85,7 +85,6 @@ function FiberRootNode(containerInfo, tag, hydrate) {
     }
   }
 }
-
 export function createFiberRoot(
   containerInfo: any,
   tag: RootTag,
@@ -93,6 +92,7 @@ export function createFiberRoot(
   hydrationCallbacks: null | SuspenseHydrationCallbacks,
   strictModeLevelOverride: null | number,
 ): FiberRoot {
+  // 创建FiberRoot
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
@@ -100,8 +100,11 @@ export function createFiberRoot(
 
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
+  // 创建 rootFiber，id为root的div所对应的fiber
   const uninitializedFiber = createHostRootFiber(tag, strictModeLevelOverride);
+  // fiberRoot.current => rootFiber
   root.current = uninitializedFiber;
+  // rootFiber.stateNode => fiberRoot
   uninitializedFiber.stateNode = root;
 
   if (enableCache) {
@@ -118,7 +121,11 @@ export function createFiberRoot(
     };
     uninitializedFiber.memoizedState = initialState;
   }
-
+  /* 
+    为rootFiber 添加updateQueue属性，初始化 updateQueue 对象
+      updateQueue用于存放Update对象
+      Update 对象用于记录组建状态的改变
+  */
   initializeUpdateQueue(uninitializedFiber);
 
   return root;

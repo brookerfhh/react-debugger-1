@@ -4,4 +4,4 @@ import "./index.css";
 import jsx from "./pages/ExamplePage";
 
 ReactDOM.render(jsx, document.getElementById("root"));
-console.log("React", React.version); //sy-log
+console.log("React 版本===", React.version); //sy-log

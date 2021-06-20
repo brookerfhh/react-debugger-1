@@ -204,9 +204,13 @@ if (supportsMutation) {
   ) {
     // We only have the top Fiber that was created but we need recurse down its
     // children to find all the terminal nodes.
+    // 获取第一个子节点
     let node = workInProgress.child;
+    // 循环创建 子Fiber对应的dom对象
     while (node !== null) {
+      // 如果是普通 的react元素  或者 文本元素
       if (node.tag === HostComponent || node.tag === HostText) {
+        // 将子级追加到父级中 parent.appendChild(node.stateNode)
         appendInitialChild(parent, node.stateNode);
       } else if (node.tag === HostPortal) {
         // If we have a portal child, then we don't want to traverse
@@ -217,10 +221,13 @@ if (supportsMutation) {
         node = node.child;
         continue;
       }
+      // node和workInProgress相同，说明node已经退回父级，终止循环，此时所有子级已经都追加到父级中了
       if (node === workInProgress) {
         return;
       }
+      // 处理子级的兄弟节点
       while (node.sibling === null) {
+        // 没有父级，说明已经到顶部了
         if (node.return === null || node.return === workInProgress) {
           return;
         }
@@ -789,9 +796,11 @@ function completeWork(
   workInProgress: Fiber,
   renderLanes: Lanes,
 ): Fiber | null {
-  const newProps = workInProgress.pendingProps;
 
+  const newProps = workInProgress.pendingProps;
+  // 匹配当前Fiber的类型，只有几个需要创建对应的DOM对象
   switch (workInProgress.tag) {
+    // 这些组件 不能创建dom对象
     case IndeterminateComponent:
     case LazyComponent:
     case SimpleMemoComponent:
@@ -847,11 +856,13 @@ function completeWork(
       bubbleProperties(workInProgress);
       return null;
     }
+    // 普通react元素
     case HostComponent: {
       popHostContext(workInProgress);
       const rootContainerInstance = getRootHostContainer();
       const type = workInProgress.type;
       if (current !== null && workInProgress.stateNode != null) {
+        // 更新时
         updateHostComponent(
           current,
           workInProgress,
@@ -864,6 +875,7 @@ function completeWork(
           markRef(workInProgress);
         }
       } else {
+        // 初始化时
         if (!newProps) {
           invariant(
             workInProgress.stateNode !== null,
@@ -896,6 +908,7 @@ function completeWork(
             markUpdate(workInProgress);
           }
         } else {
+          // 创建fiber对应的dom节点
           const instance = createInstance(
             type,
             newProps,
@@ -903,9 +916,9 @@ function completeWork(
             currentHostContext,
             workInProgress,
           );
-
+          // 创建当前dom对象下的所有子节点 ，并将所有子节点的dom节点插入刚创建的dom里
           appendAllChildren(instance, workInProgress, false, false);
-
+          // dom节点赋值给stateNode属性
           workInProgress.stateNode = instance;
 
           // Certain renderers require commit-time effects for initial mount.

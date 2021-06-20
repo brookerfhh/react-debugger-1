@@ -210,20 +210,27 @@ export function createUpdate(eventTime: number, lane: Lane): Update<*> {
   };
   return update;
 }
-
+/* 
+  将任务对象update存放于任务队列updateQueue中
+  创建单项链表结构 存放update，next执行下一个 更新任务
+*/
 export function enqueueUpdate<State>(
-  fiber: Fiber,
+  fiber: Fiber, // rootFiber
   update: Update<State>,
-  lane: Lane,
+  lane: Lane, // 优先级
 ) {
+  // 取出
   const updateQueue = fiber.updateQueue;
   if (updateQueue === null) {
     // Only occurs if the fiber has been unmounted.
     return;
   }
-
+  /* 
+    获取待执行的 update 任务
+    初始渲染时没有待执行的任务
+  */
   const sharedQueue: SharedQueue<State> = (updateQueue: any).shared;
-
+  // todo
   if (isInterleavedUpdate(fiber, lane)) {
     const interleaved = sharedQueue.interleaved;
     if (interleaved === null) {
@@ -238,6 +245,7 @@ export function enqueueUpdate<State>(
     }
     sharedQueue.interleaved = update;
   } else {
+    // pending为待执行的任务
     const pending = sharedQueue.pending;
     if (pending === null) {
       // This is the first update. Create a circular list.
@@ -246,6 +254,7 @@ export function enqueueUpdate<State>(
       update.next = pending.next;
       pending.next = update;
     }
+    // 将当前任务 存到pending中
     sharedQueue.pending = update;
   }
 
