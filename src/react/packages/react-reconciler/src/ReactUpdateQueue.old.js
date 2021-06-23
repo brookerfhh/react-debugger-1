@@ -231,6 +231,7 @@ export function enqueueUpdate<State>(
   */
   const sharedQueue: SharedQueue<State> = (updateQueue: any).shared;
   // todo
+  debugger
   if (isInterleavedUpdate(fiber, lane)) {
     const interleaved = sharedQueue.interleaved;
     if (interleaved === null) {

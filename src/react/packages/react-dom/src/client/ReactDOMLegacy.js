@@ -221,13 +221,13 @@ function legacyRenderSubtreeIntoContainer(
       forceHydrate,
     );
     fiberRoot = root._internalRoot;
-    console.log('fiberRoot ====', fiberRoot)
     if (typeof callback === 'function') {
       const originalCallback = callback;
       // 改变 callback this的指向，指向render 第一个参数的真实dom对象。如果是函数组件，则没有this
       callback = function() {
         // 获取container的第一个子元素的实例对象
         const instance = getPublicRootInstance(fiberRoot);
+        
         originalCallback.call(instance);
       };
     }

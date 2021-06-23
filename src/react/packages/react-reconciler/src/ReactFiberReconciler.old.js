@@ -278,6 +278,7 @@ export function updateContainer(
   if (__DEV__) {
     onScheduleRoot(container, element);
   }
+  // container = FiberRoot
   // current 当前fiber，初始化时 为 fiberRoot对应的 rootFiber
   const current = container.current;
   const eventTime = requestEventTime();
@@ -289,7 +290,6 @@ export function updateContainer(
     }
   }
   const lane = requestUpdateLane(current);
-
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);
   }
@@ -331,7 +331,7 @@ export function updateContainer(
   // being called "element".
   // 把将要更新的任务挂载到payload中
   update.payload = {element};
-
+  console.log('首次update.payload====', update.payload)
   callback = callback === undefined ? null : callback;
   if (callback !== null) {
     if (__DEV__) {
@@ -345,7 +345,7 @@ export function updateContainer(
     }
     update.callback = callback;
   }
-  // 将update任务对象 加入到当前Fiber的更新队列当中，即updateQueue
+  // 将update任务对象 加入到当前Fiber即rootFiber的更新队列当中，即updateQueue
   // 待执行的任务都会被存储在fiber.updateQueue.shared.pending
   enqueueUpdate(current, update, lane);
   // 调度和更新 current 对象, 即开始执行任务

@@ -20,9 +20,9 @@ function FunctionComponent({name}) {
 const jsx = (
   <div className="box border">
     <p>开课吧</p>
-    <a href="https://kaikeba.com/">开课吧</a>
+    {/* <a href="https://kaikeba.com/">开课吧</a>
     <FunctionComponent name="函数组件" />
-    <ClassComponent name="class组件" />
+    <ClassComponent name="class组件" /> */}
   </div>
 );
 console.log('react 版本===', React.version)

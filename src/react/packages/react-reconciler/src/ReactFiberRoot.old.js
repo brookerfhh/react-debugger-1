@@ -52,7 +52,7 @@ function FiberRootNode(containerInfo, tag, hydrate) {
 
   this.entangledLanes = NoLanes;
   this.entanglements = createLaneMap(NoLanes);
-
+  // 实验性的属性 
   if (enableCache) {
     this.pooledCache = null;
     this.pooledCacheLanes = NoLanes;
@@ -94,6 +94,7 @@ export function createFiberRoot(
 ): FiberRoot {
   // 创建FiberRoot
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
+  console.log('FiberRoot====', root)
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
   }
@@ -106,7 +107,7 @@ export function createFiberRoot(
   root.current = uninitializedFiber;
   // rootFiber.stateNode => fiberRoot
   uninitializedFiber.stateNode = root;
-
+  console.log('rootFiber====', uninitializedFiber)
   if (enableCache) {
     const initialCache = new Map();
     root.pooledCache = initialCache;
