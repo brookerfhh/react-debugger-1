@@ -506,6 +506,7 @@ export function scheduleUpdateOnFiber(
   checkForNestedUpdates();
   warnAboutRenderPhaseUpdatesInDEV(fiber);
   // 遍历更新子节点的 优先级，返回FiberRoot
+  // 向上收集fiber.childLanes，首次渲染不执行
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
     warnAboutUpdateOnUnmountedFiberInDEV(fiber);
@@ -513,6 +514,7 @@ export function scheduleUpdateOnFiber(
   }
 
   // Mark that the root has a pending update.
+  // 在root上标记更新，将update的lane放到root.pendingLanes
   markRootUpdated(root, lane, eventTime);
 
   if (enableProfilerTimer && enableProfilerNestedUpdateScheduledHook) {
@@ -587,6 +589,7 @@ export function scheduleUpdateOnFiber(
       // 进入render 和 commit 阶段
       performSyncWorkOnRoot(root);
     } else {
+      // 进入一步render
       ensureRootIsScheduled(root, eventTime);
       schedulePendingInteractions(root, lane);
       if (executionContext === NoContext) {
@@ -601,6 +604,7 @@ export function scheduleUpdateOnFiber(
     }
   } else {
     //concurrent模式
+    // 获取优先级
     const updateLanePriority = getCurrentUpdateLanePriority();
 
     // Schedule a discrete update but only if it's not Sync.
@@ -651,6 +655,7 @@ function markUpdateLaneFromFiberToRoot(
   // Walk the parent path to the root and update the child lanes.
   let node = sourceFiber;
   let parent = sourceFiber.return;
+  debugger
   while (parent !== null) {
     parent.childLanes = mergeLanes(parent.childLanes, lane);
     alternate = parent.alternate;
@@ -1023,6 +1028,7 @@ function performSyncWorkOnRoot(root) {
 
   let lanes;
   let exitStatus;
+  // 首次渲染 workInProgressRoot为null，所以走else逻辑
   if (
     root === workInProgressRoot &&
     includesSomeLane(root.expiredLanes, workInProgressRootRenderLanes)
@@ -1032,6 +1038,7 @@ function performSyncWorkOnRoot(root) {
     lanes = workInProgressRootRenderLanes;
     exitStatus = renderRootSync(root, lanes);
   } else {
+    // 首次渲染走这
     lanes = getNextLanes(root, NoLanes);
     // Because we don't cancel synchronous tasks, sometimes more than one
     // synchronous task ends up being scheduled. This is an artifact of the fact
@@ -1168,6 +1175,7 @@ export function batchedUpdates<A, R>(fn: A => R, a: A): R {
     return fn(a);
   } finally {
     executionContext = prevExecutionContext;
+    // 如果是setTimeout中 就没有执行上下文，就会执行下面的操作
     if (executionContext === NoContext) {
       // Flush the immediate callbacks that were scheduled during this batch
       resetRenderTimer();
@@ -1219,6 +1227,7 @@ export function discreteUpdates<A, B, C, D, R>(
 export function unbatchedUpdates<A, R>(fn: (a: A) => R, a: A): R {
   
   const prevExecutionContext = executionContext;
+  
   executionContext &= ~BatchedContext;
   executionContext |= LegacyUnbatchedContext;
   try {
@@ -1496,18 +1505,22 @@ export function renderHasNotSuspendedYet(): boolean {
   构建workInProgressFiber树 以及 rootFiber
 */
 function renderRootSync(root: FiberRoot, lanes: Lanes) {
+  // executionContext 此时= RenderContext = 8
   const prevExecutionContext = executionContext;
   executionContext |= RenderContext;
   const prevDispatcher = pushDispatcher();
 
   // If the root or lanes have changed, throw out the existing stack
   // and prepare a fresh one. Otherwise we'll continue where we left off.
+  // 判断条件为true 说明发生了任务的打断，
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
-    // 在构建workInProgressFiber树 以及 rootFiber
+    // prepareFreshStack 为 取消之前构建的workInProgress，重置workInProgress
+    // 初始化 或 重置root的finishedWork 和 finishedLanes属性
+    // 构建workInProgressRoot，和构建workInProgressRoot的rootFiber
     prepareFreshStack(root, lanes);
     startWorkOnPendingInteractions(root, lanes);
   }
-
+  // 初始化一个set 数据结构
   const prevInteractions = pushInteractions(root);
 
   if (__DEV__) {
@@ -1698,10 +1711,11 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
     const current = completedWork.alternate;
     // 父节点
     const returnFiber = completedWork.return;
-
+ 
     // Check if the work completed or if something threw.
     // flags === 0
     console.log('completedWork.flags & Incomplete===', completedWork.flags & Incomplete)
+    // 如果有副作用  并且 没有结束
     if ((completedWork.flags & Incomplete) === NoFlags) {
       setCurrentDebugFiberInDEV(completedWork);
       let next;

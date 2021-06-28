@@ -289,6 +289,8 @@ export function updateContainer(
       warnIfNotScopedWithMatchingAct(current);
     }
   }
+  // 获取赛道  优先级
+  debugger
   const lane = requestUpdateLane(current);
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);
