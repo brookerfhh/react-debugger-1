@@ -16,14 +16,27 @@ function FunctionComponent({name}) {
     </div>
   );
 }
-
+const App = () => {
+  return (
+    <div className="box border">
+      <p>
+        <span>方</span>
+        <span>哈哈</span>
+      </p>
+      <FunctionComponent  name="哇哈哈"></FunctionComponent>
+      <ClassComponent name="哇哈哈"></ClassComponent>
+    </div>
+  )
+}
 const jsx = (
   <div className="box border">
-    <p>开课吧</p>
-    {/* <a href="https://kaikeba.com/">开课吧</a>
-    <FunctionComponent name="函数组件" />
-    <ClassComponent name="class组件" /> */}
+    <p>
+      <span>方</span>
+      <span>哈哈</span>
+    </p>
+    <FunctionComponent  name="哇哈哈"></FunctionComponent>
+    <ClassComponent name="哇哈哈"></ClassComponent>
   </div>
 );
 console.log('react 版本===', React.version)
-export default jsx;
+export default App;

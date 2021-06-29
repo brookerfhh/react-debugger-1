@@ -1173,7 +1173,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
   processUpdateQueue(workInProgress, nextProps, null, renderLanes);
   // 获取RootFiber 的 vDom
   const nextState = workInProgress.memoizedState;
-  
+  debugger
   const root: FiberRoot = workInProgress.stateNode;
 
   if (enableCache) {

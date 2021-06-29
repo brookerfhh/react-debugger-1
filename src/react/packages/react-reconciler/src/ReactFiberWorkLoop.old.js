@@ -655,7 +655,6 @@ function markUpdateLaneFromFiberToRoot(
   // Walk the parent path to the root and update the child lanes.
   let node = sourceFiber;
   let parent = sourceFiber.return;
-  debugger
   while (parent !== null) {
     parent.childLanes = mergeLanes(parent.childLanes, lane);
     alternate = parent.alternate;
@@ -1306,10 +1305,16 @@ export function popRenderLanes(fiber: Fiber) {
   subtreeRenderLanes = subtreeRenderLanesCursor.current;
   popFromStack(subtreeRenderLanesCursor, fiber);
 }
-// 构建workInProgressFiber树 以及 rootFiber
+/* 
+  为FiberRoot 添加|重置 finishedWork和finishedLanes 属性
+  构建workInProgressRoot = root
+  初始化workInProgress 为 rootFiber的复制，并且通过alternate互相引用
+  即 rootFiber.alternate = workInProgress
+    workInProgress.alternate = rootFiber
+*/
 function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   // 为FiberRoot 添加 finishedWork和finishedLanes 属性
-  // finishedWork 为 render 阶段执行完成后 构建的待体积的Fiber对象
+  // finishedWork 为 render 阶段执行完成后 构建的待提交的Fiber对象
   root.finishedWork = null;
   root.finishedLanes = NoLanes;
 
