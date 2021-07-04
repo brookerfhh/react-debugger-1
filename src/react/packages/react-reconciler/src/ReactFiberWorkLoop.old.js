@@ -1780,7 +1780,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         }
         completedWork.actualDuration = actualDuration;
       }
-
+      // 初始化父级的 flags、subtreeFlags、deletions属性
       if (returnFiber !== null) {
         // Mark the parent fiber as incomplete and clear its subtree flags.
         returnFiber.flags |= Incomplete;
@@ -1788,14 +1788,14 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         returnFiber.deletions = null;
       }
     }
-    // 如果兄弟节点，则返回兄弟节点
+    // 如果兄弟节点，赋值 workInProgress为兄弟节点并返回，继续循环执行performUnitOfWork, 让兄弟节点先 执行beginWork
     const siblingFiber = completedWork.sibling;
     if (siblingFiber !== null) {
       // If there is more work to do in this returnFiber, do that next.
       workInProgress = siblingFiber;
       return;
     }
-    // 没有子级 也没有兄弟节点，则返回父级，即returnFiber
+    // 没有兄弟节点，则返回父级，即returnFiber，父级节点继续执行completeWork
     // Otherwise, return to the parent
     completedWork = returnFiber;
     // Update the next thing we're working on in case something throws.

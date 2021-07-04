@@ -23,8 +23,8 @@ const App = () => {
         <span>方</span>
         <span>哈哈</span>
       </p>
-      <FunctionComponent  name="哇哈哈"></FunctionComponent>
-      <ClassComponent name="哇哈哈"></ClassComponent>
+      <ClassComponent name="class-hh"></ClassComponent>
+      <FunctionComponent  name="function-hh"></FunctionComponent>
     </div>
   )
 }

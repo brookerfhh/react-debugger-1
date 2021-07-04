@@ -678,7 +678,7 @@ function bubbleProperties(completedWork: Fiber) {
 
   let newChildLanes = NoLanes;
   let subtreeFlags = NoFlags;
-
+  // 
   if (!didBailout) {
     // Bubble up the earliest expiration time.
     if (enableProfilerTimer && (completedWork.mode & ProfileMode) !== NoMode) {
@@ -916,7 +916,8 @@ function completeWork(
             currentHostContext,
             workInProgress,
           );
-          // 创建当前dom对象下的所有子节点 ，并将所有子节点的dom节点插入刚创建的dom里
+          // 创建当前dom对象下的所有子节点 
+          
           appendAllChildren(instance, workInProgress, false, false);
           // dom节点赋值给stateNode属性
           workInProgress.stateNode = instance;
