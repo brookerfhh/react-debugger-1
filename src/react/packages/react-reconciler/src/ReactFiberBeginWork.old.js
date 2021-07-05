@@ -261,7 +261,9 @@ export function reconcileChildren(
   // 优先级
   renderLanes: Lanes,
 ) {
-  // 初始化渲染 current为null
+  // current为当前fiber的alternate 所对应的currentFiber节点
+  // 首次渲染时rootFiber的alternate有值，所以走else逻辑
+  // rootFiber以下的节点 alternate 即 current都为空，所以走下面的逻辑
   if (current === null) {
     // 挂载
     // If this is a fresh new component that hasn't been rendered yet, we
@@ -283,6 +285,7 @@ export function reconcileChildren(
     // If we had any progressed work already, that is invalid at this point so
     // let's throw it out.
     // 新旧 Fiber对比
+    // 首次渲染 rootFiber 不为null，所以走else逻辑
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,
@@ -1219,6 +1222,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
         }
       }
     }
+    // mountChildFibers = ChildReconciler(false)
     const child = mountChildFibers(
       workInProgress,
       null,
@@ -1226,7 +1230,6 @@ function updateHostRoot(current, workInProgress, renderLanes) {
       renderLanes,
     );
     workInProgress.child = child;
-
     let node = child;
     while (node) {
       // Mark each child as hydrating. This is a fast path to know whether this

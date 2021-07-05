@@ -358,6 +358,7 @@ function ChildReconciler(shouldTrackSideEffects) {
   function placeSingleChild(newFiber: Fiber): Fiber {
     // This is simpler for the single child case. We only need to do a
     // placement for inserting new children.
+    debugger
     if (shouldTrackSideEffects && newFiber.alternate === null) {
       newFiber.flags |= Placement;
     }
@@ -1175,7 +1176,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       return created;
     } else {
       // 首次渲染走这个
-      // 根据ReactElement 创建Fiber对象，并返回
+      // 根据ReactElement 即vnode 创建Fiber对象，并返回
       const created = createFiberFromElement(element, returnFiber.mode, lanes);
       created.ref = coerceRef(returnFiber, currentFirstChild, element);
       created.return = returnFiber;
@@ -1249,7 +1250,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     if (isUnkeyedTopLevelFragment) {
       newChild = newChild.props.children;
     }
-
+    debugger
     // Handle object types
     // 判断newChild是否是对象类型：数组或对象
     const isObject = typeof newChild === 'object' && newChild !== null;

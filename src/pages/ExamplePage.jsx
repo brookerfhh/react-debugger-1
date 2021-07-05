@@ -1,4 +1,4 @@
-import {React, Component, useState} from "../CONST";
+import {React, Component, useState} from "./CONST";
 
 class ClassComponent extends Component {
   render() {

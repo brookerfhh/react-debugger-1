@@ -1679,6 +1679,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
+    
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
     // 循环 向下遍历构建 子级Fiber，即父 => 子 构建Fiber对象
