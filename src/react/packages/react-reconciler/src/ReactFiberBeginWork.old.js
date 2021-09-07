@@ -1222,6 +1222,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
         }
       }
     }
+    console.log('nextChildren===', nextChildren)
     // mountChildFibers = ChildReconciler(false)
     const child = mountChildFibers(
       workInProgress,
@@ -1480,7 +1481,7 @@ function mountIndeterminateComponent(
     // Since this is conceptually a new fiber, schedule a Placement effect
     workInProgress.flags |= Placement;
   }
-
+  debugger
   const props = workInProgress.pendingProps;
   let context;
   if (!disableLegacyContext) {
