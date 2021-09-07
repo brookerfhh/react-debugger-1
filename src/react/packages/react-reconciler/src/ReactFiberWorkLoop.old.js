@@ -572,7 +572,7 @@ export function scheduleUpdateOnFiber(
     // legacy模式 走这里
     if (
       // Check if we're inside unbatchedUpdates
-      // 检测是否处于非批量更新模式
+      // 检测是否处于非批量更新模式, 判断是否合成事件
       (executionContext & LegacyUnbatchedContext) !== NoContext &&
       // Check if we're not already rendering
       // 检测是否没有处于正在进行渲染的任务
@@ -592,6 +592,8 @@ export function scheduleUpdateOnFiber(
       // 进入一步render
       ensureRootIsScheduled(root, eventTime);
       schedulePendingInteractions(root, lane);
+      // 合成事件executionContext = 000000110 = 6
+      // 原生事件executionContext = 0,setTimeout 执行是也是0，所以setTimeout和原生事件走的是同步更新
       if (executionContext === NoContext) {
         // Flush the synchronous work now, unless we're already working or inside
         // a batch. This is intentionally inside scheduleUpdateOnFiber instead of
@@ -1087,7 +1089,7 @@ function performSyncWorkOnRoot(root) {
 
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
-  // root.current.alternate为刚构建好的workInProgress树
+  // root.current.alternate为刚构建好的workInProgress树 赋值给finishedWork
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
@@ -1811,6 +1813,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
 }
 
 function commitRoot(root) {
+  // 获取当前优先级
   const previousUpdateLanePriority = getCurrentUpdateLanePriority();
   try {
     // 设置最高优先级  commit阶段不可被暂停

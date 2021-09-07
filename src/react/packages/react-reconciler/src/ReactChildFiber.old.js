@@ -358,7 +358,6 @@ function ChildReconciler(shouldTrackSideEffects) {
   function placeSingleChild(newFiber: Fiber): Fiber {
     // This is simpler for the single child case. We only need to do a
     // placement for inserting new children.
-    debugger
     if (shouldTrackSideEffects && newFiber.alternate === null) {
       newFiber.flags |= Placement;
     }
@@ -1250,7 +1249,6 @@ function ChildReconciler(shouldTrackSideEffects) {
     if (isUnkeyedTopLevelFragment) {
       newChild = newChild.props.children;
     }
-    debugger
     // Handle object types
     // 判断newChild是否是对象类型：数组或对象
     const isObject = typeof newChild === 'object' && newChild !== null;

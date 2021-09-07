@@ -1576,6 +1576,7 @@ function mountIndeterminateComponent(
     }
 
     // Proceed under the assumption that this is a class instance
+    // 函数组件对应的fiber
     workInProgress.tag = ClassComponent;
 
     // Throw out any hooks that were used.
@@ -1620,6 +1621,7 @@ function mountIndeterminateComponent(
     );
   } else {
     // Proceed under the assumption that this is a function component
+    // 函数组件
     workInProgress.tag = FunctionComponent;
     if (__DEV__) {
       if (disableLegacyContext && Component.contextTypes) {
