@@ -1228,13 +1228,16 @@ export function discreteUpdates<A, B, C, D, R>(
 export function unbatchedUpdates<A, R>(fn: (a: A) => R, a: A): R {
   
   const prevExecutionContext = executionContext;
-  
+
   executionContext &= ~BatchedContext;
   executionContext |= LegacyUnbatchedContext;
   try {
     return fn(a);
   } finally {
     executionContext = prevExecutionContext;
+    // 通过executionContext去判断，原生事件和setTimeout中的executionContext值是0，会走同步更新的方式
+    // 其他情况executionContext的值不为0，走异步批处理的方式
+    // NoContext = 0
     if (executionContext === NoContext) {
       // Flush the immediate callbacks that were scheduled during this batch
       resetRenderTimer();
@@ -1702,6 +1705,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   ReactCurrentOwner.current = null;
 }
 /* 
+首次渲染
   1、创建Fiber
   2、创建每个节点的这是DOM对象 并添加到stateNode属性中
   3、收集要执行DOM操作的Fiber节点，即每个节点需要做什么DOM操作，储存到 effect 链接结构
@@ -1722,8 +1726,10 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
  
     // Check if the work completed or if something threw.
     // flags === 0
+    // Incomplete = /*                   */ 0b0000000010000000000000;
     console.log('completedWork.flags & Incomplete===', completedWork.flags & Incomplete)
     // 如果有副作用  并且 没有结束
+    // completeWork.flags 不包含 Incomplete
     if ((completedWork.flags & Incomplete) === NoFlags) {
       setCurrentDebugFiberInDEV(completedWork);
       let next;
@@ -1749,7 +1755,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         return;
       }
     } else {
-      debugger
+      
       // This fiber did not complete because something threw. Pop values off
       // the stack without entering the complete phase. If this is a boundary,
       // capture values if possible.
@@ -1827,9 +1833,13 @@ function commitRoot(root) {
 }
 /* 
   commit阶段可以分为3个子阶段：
-    1 before mutation阶段，执行DOM操作前
+    1 before mutation阶段，执行DOM操作前,
+      这个阶段 DOM 节点还没有被渲染到界面上去，过程中会触发 getSnapshotBeforeUpdate，也会处理 useEffect 钩子相关的调度逻辑
     2 mutation阶段，执行DOM操作
+      这个阶段负责 DOM 节点的渲染。在渲染过程中，会遍历 effectList，根据 flags（effectTag）的不同，执行不同的 DOM 操作。
     3 layout阶段，执行DOM操作后
+      这个阶段处理 DOM 渲染完毕之后的收尾逻辑。比如调用 componentDidMount/componentDidUpdate，调用 useLayoutEffect 钩子函数的回调等。
+      把 fiberRoot 的 current 指针指向 workInProgress Fiber 树
 */
 function commitRootImpl(root, renderPriorityLevel) {
   do {
@@ -1839,7 +1849,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     // no more pending effects.
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
-    // 
+    // 调用flushPassiveEffects执行完所有effect的任务
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
@@ -1950,11 +1960,14 @@ function commitRootImpl(root, renderPriorityLevel) {
       (BeforeMutationMask | MutationMask | LayoutMask | PassiveMask)) !==
     NoFlags;
 
+  // 有副作用，执行更新
   if (subtreeHasEffects || rootHasEffect) {
+    // 保存之前的优先级，以同步优先级执行，执行完毕后恢复之前优先级
     const previousLanePriority = getCurrentUpdateLanePriority();
     setCurrentUpdateLanePriority(SyncLanePriority);
 
     const prevExecutionContext = executionContext;
+    // 将当前上下文标记为CommitContext，作为commit阶段的标志
     executionContext |= CommitContext;
     const prevInteractions = pushInteractions(root);
 
@@ -1968,7 +1981,9 @@ function commitRootImpl(root, renderPriorityLevel) {
     // The first phase a "before mutation" phase. We use this phase to read the
     // state of the host tree right before we mutate it. This is where
     // getSnapshotBeforeUpdate is called.
-    // commit第一个子阶段
+    // commit第一个子阶段: 
+    //   before mutation阶段，执行DOM操作前,
+    //   这个阶段 DOM 节点还没有被渲染到界面上去，过程中会触发 getSnapshotBeforeUpdate，也会处理 useEffect 钩子相关的调度逻辑
     const shouldFireAfterActiveInstanceBlur = commitBeforeMutationEffects(
       root,
       finishedWork,
@@ -1988,6 +2003,8 @@ function commitRootImpl(root, renderPriorityLevel) {
 
     // The next phase is the mutation phase, where we mutate the host tree.
     // commit第二个子阶段
+    //   mutation阶段，执行DOM操作
+    //   这个阶段负责 DOM 节点的渲染。在渲染过程中，会遍历 effectList，根据 flags（effectTag）的不同，执行不同的 DOM 操作。
     commitMutationEffects(root, renderPriorityLevel, finishedWork);
 
     if (shouldFireAfterActiveInstanceBlur) {
@@ -2013,6 +2030,9 @@ function commitRootImpl(root, renderPriorityLevel) {
       markLayoutEffectsStarted(lanes);
     }
     // commit第三个子阶段
+    //    layout阶段，执行DOM操作后
+    //    这个阶段处理 DOM 渲染完毕之后的收尾逻辑。比如调用 componentDidMount/componentDidUpdate，调用 useLayoutEffect 钩子函数的回调等。
+    //    把 fiberRoot 的 current 指针指向 workInProgress Fiber 树
     commitLayoutEffects(finishedWork, root, lanes);
     if (__DEV__) {
       if (enableDebugTracing) {

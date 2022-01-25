@@ -215,6 +215,8 @@ function legacyRenderSubtreeIntoContainer(
       为container 添加 _reactRootContainer
       为_reactRootContainer 添加 _internalRoot
       _internalRoot 即为 FiberRoot
+
+      legacyCreateRootFromDOMContainer执行 创建了fiberRoot和rootFiber，并且返回 rootFiber
     */
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,

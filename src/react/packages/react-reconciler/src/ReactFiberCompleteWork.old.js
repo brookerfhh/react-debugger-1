@@ -917,7 +917,6 @@ function completeWork(
             workInProgress,
           );
           // 创建当前dom对象下的所有子节点 
-          
           appendAllChildren(instance, workInProgress, false, false);
           // dom节点赋值给stateNode属性
           workInProgress.stateNode = instance;
@@ -925,6 +924,7 @@ function completeWork(
           // Certain renderers require commit-time effects for initial mount.
           // (eg DOM renderer supports auto-focus for certain elements).
           // Make sure such renderers get scheduled for later work.
+          //  设置dom的prop属性
           if (
             finalizeInitialChildren(
               instance,
@@ -943,6 +943,7 @@ function completeWork(
           markRef(workInProgress);
         }
       }
+      // 根据fiber.child及fiber.child.sibling更新subtreeFlags和childLanes
       bubbleProperties(workInProgress);
       return null;
     }

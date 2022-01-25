@@ -1,8 +1,14 @@
 import {React, Component, useState} from "./CONST";
 
 class ClassComponent extends Component {
+  state = {
+    count: 0
+  }
   render() {
-    return <div className="class border">{this.props.name}</div>;
+    const { count } = this.state
+    return <div className="class border" onClick={() => this.setState({
+      count: count+1
+    })}>{count}</div>;
   }
 }
 

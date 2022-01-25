@@ -87,7 +87,7 @@ import invariant from 'shared/invariant';
 import shallowEqual from 'shared/shallowEqual';
 import getComponentNameFromFiber from 'react-reconciler/src/getComponentNameFromFiber';
 import getComponentNameFromType from 'shared/getComponentNameFromType';
-import ReactStrictModeWarnings from './ReactStrictModeWarnings.old';
+// import ReactStrictModeWarnings from './ReactStrictModeWarnings.old';
 import {REACT_LAZY_TYPE, getIteratorFn} from 'shared/ReactSymbols';
 import {
   getCurrentFiberOwnerNameInDevOrNull,
@@ -229,7 +229,7 @@ const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
 
 let didReceiveUpdate: boolean = false;
 
-let didWarnAboutBadClass;
+// let didWarnAboutBadClass;
 let didWarnAboutModulePatternComponent;
 let didWarnAboutContextTypeOnFunctionComponent;
 let didWarnAboutGetDerivedStateOnFunctionComponent;
@@ -240,7 +240,7 @@ let didWarnAboutTailOptions;
 let didWarnAboutDefaultPropsOnFunctionComponent;
 
 if (__DEV__) {
-  didWarnAboutBadClass = {};
+  // didWarnAboutBadClass = {};
   didWarnAboutModulePatternComponent = {};
   didWarnAboutContextTypeOnFunctionComponent = {};
   didWarnAboutGetDerivedStateOnFunctionComponent = {};
@@ -1481,7 +1481,6 @@ function mountIndeterminateComponent(
     // Since this is conceptually a new fiber, schedule a Placement effect
     workInProgress.flags |= Placement;
   }
-  debugger
   const props = workInProgress.pendingProps;
   let context;
   if (!disableLegacyContext) {
@@ -1496,30 +1495,40 @@ function mountIndeterminateComponent(
   prepareToReadContext(workInProgress, renderLanes);
   let value;
 
-  if (__DEV__) {
-    if (
-      Component.prototype &&
-      typeof Component.prototype.render === 'function'
-    ) {
-      const componentName = getComponentNameFromType(Component) || 'Unknown';
+  // if (__DEV__) {
+  //   if (
+  //     Component.prototype &&
+  //     typeof Component.prototype.render === 'function'
+  //   ) {
+  //     const componentName = getComponentNameFromType(Component) || 'Unknown';
 
-      if (!didWarnAboutBadClass[componentName]) {
-        console.error(
-          "The <%s /> component appears to have a render method, but doesn't extend React.Component. " +
-            'This is likely to cause errors. Change %s to extend React.Component instead.',
-          componentName,
-          componentName,
-        );
-        didWarnAboutBadClass[componentName] = true;
-      }
-    }
+  //     if (!didWarnAboutBadClass[componentName]) {
+  //       console.error(
+  //         "The <%s /> component appears to have a render method, but doesn't extend React.Component. " +
+  //           'This is likely to cause errors. Change %s to extend React.Component instead.',
+  //         componentName,
+  //         componentName,
+  //       );
+  //       didWarnAboutBadClass[componentName] = true;
+  //     }
+  //   }
 
-    if (workInProgress.mode & StrictLegacyMode) {
-      ReactStrictModeWarnings.recordLegacyContextWarning(workInProgress, null);
-    }
+  //   if (workInProgress.mode & StrictLegacyMode) {
+  //     ReactStrictModeWarnings.recordLegacyContextWarning(workInProgress, null);
+  //   }
 
-    setIsRendering(true);
-    ReactCurrentOwner.current = workInProgress;
+  //   setIsRendering(true);
+  //   ReactCurrentOwner.current = workInProgress;
+  //   value = renderWithHooks(
+  //     null,
+  //     workInProgress,
+  //     Component,
+  //     props,
+  //     context,
+  //     renderLanes,
+  //   );
+  //   setIsRendering(false);
+  // } else {
     value = renderWithHooks(
       null,
       workInProgress,
@@ -1528,17 +1537,7 @@ function mountIndeterminateComponent(
       context,
       renderLanes,
     );
-    setIsRendering(false);
-  } else {
-    value = renderWithHooks(
-      null,
-      workInProgress,
-      Component,
-      props,
-      context,
-      renderLanes,
-    );
-  }
+  // }
   // React DevTools reads this flag.
   workInProgress.flags |= PerformedWork;
 
