@@ -768,7 +768,7 @@ function bubbleProperties(completedWork: Fiber) {
         );
 
         // "Static" flags share the lifetime of the fiber/hook they belong to,
-        // so we should bubble those up even during a bailout. All the other
+        // so we should bubble those up even during a bailout. All the otherbbb  
         // flags have a lifetime only of a single render + commit, so we should
         // ignore them.
         subtreeFlags |= child.subtreeFlags & StaticMask;

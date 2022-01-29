@@ -3581,10 +3581,10 @@ function beginWork(
         renderLanes,
       );
     }
-    // 3 
+    // 3 根节点将进入这个逻辑,即rootFiber
     case HostRoot:
       return updateHostRoot(current, workInProgress, renderLanes);
-      // 5 普通的react元素
+      // 5 普通的react元素，即dom 标签对应的节点将进入这个逻辑
     case HostComponent:
       return updateHostComponent(current, workInProgress, renderLanes);
       // 6 文本元素

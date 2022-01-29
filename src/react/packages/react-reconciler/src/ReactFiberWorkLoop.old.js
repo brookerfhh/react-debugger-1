@@ -589,7 +589,7 @@ export function scheduleUpdateOnFiber(
       // 进入render 和 commit 阶段
       performSyncWorkOnRoot(root);
     } else {
-      // 进入一步render
+      // 进入异步render
       ensureRootIsScheduled(root, eventTime);
       schedulePendingInteractions(root, lane);
       // 合成事件executionContext = 000000110 = 6
@@ -874,6 +874,8 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
 
     // We now have a consistent tree. The next step is either to commit it,
     // or, if something suspended, wait to commit it after a timeout.
+    // fiberRoot.current = rootFiber
+    // finishedWork = rootFiber.alternate
     const finishedWork: Fiber = (root.current.alternate: any);
     root.finishedWork = finishedWork;
     root.finishedLanes = lanes;
@@ -1090,6 +1092,7 @@ function performSyncWorkOnRoot(root) {
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
   // root.current.alternate为刚构建好的workInProgress树 赋值给finishedWork
+  // finishedWork即workInProgress树构建完成 render阶段结束，
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
@@ -1316,6 +1319,10 @@ export function popRenderLanes(fiber: Fiber) {
   初始化workInProgress 为 rootFiber的复制，并且通过alternate互相引用
   即 rootFiber.alternate = workInProgress
     workInProgress.alternate = rootFiber
+
+                    FiberRoot
+            /       alternate        \
+    Current rootFiber ————> workInProgress rootFiber
 */
 function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   // 为FiberRoot 添加 finishedWork和finishedLanes 属性
@@ -1522,7 +1529,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 
   // If the root or lanes have changed, throw out the existing stack
   // and prepare a fresh one. Otherwise we'll continue where we left off.
-  // 判断条件为true 说明发生了任务的打断，
+  // 判断条件为true 说明是 首次渲染 || 发生了任务的打断，
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
     // prepareFreshStack 为 取消之前构建的workInProgress，重置workInProgress
     // 初始化 或 重置root的finishedWork 和 finishedLanes属性
@@ -1729,7 +1736,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
     // Incomplete = /*                   */ 0b0000000010000000000000;
     console.log('completedWork.flags & Incomplete===', completedWork.flags & Incomplete)
     // 如果有副作用  并且 没有结束
-    // completeWork.flags 不包含 Incomplete
+    // completeWork.flags 不包含 Incomplete ?
     if ((completedWork.flags & Incomplete) === NoFlags) {
       setCurrentDebugFiberInDEV(completedWork);
       let next;

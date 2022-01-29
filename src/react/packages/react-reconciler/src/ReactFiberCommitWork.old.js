@@ -2084,7 +2084,6 @@ function commitMutationEffectsOnFiber(
   root: FiberRoot,
   renderPriorityLevel: LanePriority,
 ) {
-  debugger
   const flags = finishedWork.flags;
 
   if (flags & ContentReset) {
@@ -2110,10 +2109,14 @@ function commitMutationEffectsOnFiber(
   // bitmap value, we remove the secondary effects from the effect tag and
   // switch on that value.
   const primaryFlags = flags & (Placement | Update | Hydrating);
-  // 匹配相关操作
+  console.log('finishedWork===', finishedWork, flags, flags & (Placement | Update | Hydrating))
+  // 匹配相关操作 
   outer: switch (primaryFlags) {
     // 针对该节点以及子节点进行插入操作
     case Placement: {
+      /* 
+        mount时，依次将根元素到所有叶子元素的所有dom元素  插入到 根容器<div id=“root”></div>
+      */
       commitPlacement(finishedWork);
       // Clear the "placement" from effect tag so that we know that this is
       // inserted, before any life-cycles like componentDidMount gets called.
