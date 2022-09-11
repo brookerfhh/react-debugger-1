@@ -500,7 +500,8 @@ export function scheduleUpdateOnFiber(
 ): FiberRoot | null {
   checkForNestedUpdates();
   warnAboutRenderPhaseUpdatesInDEV(fiber);
-
+  // markUpdateLaneFromFiberToRoot函数中会从触发更新的节点开始向上遍历到rootFiber，遍历的过程会处理节点的优先级
+  // 最终返回root节点
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
     warnAboutUpdateOnUnmountedFiberInDEV(fiber);
@@ -508,6 +509,7 @@ export function scheduleUpdateOnFiber(
   }
 
   // Mark that the root has a pending update.
+  // 标记root节点 有个挂起的更新， 主要是更新 root.pendingLanes
   markRootUpdated(root, lane, eventTime);
 
   if (enableProfilerTimer && enableProfilerNestedUpdateScheduledHook) {
@@ -541,6 +543,7 @@ export function scheduleUpdateOnFiber(
     // `deferRenderPhaseUpdateToNextBatch` flag is off and this is a render
     // phase update. In that case, we don't treat render phase updates as if
     // they were interleaved, for backwards compat reasons.
+    // executionContext 不包含 RenderContext
     if (
       deferRenderPhaseUpdateToNextBatch ||
       (executionContext & RenderContext) === NoContext
@@ -564,8 +567,10 @@ export function scheduleUpdateOnFiber(
   if (lane === SyncLane) {
     if (
       // Check if we're inside unbatchedUpdates
+      // executionContext 包含 LegacyUnbatchedContext
       (executionContext & LegacyUnbatchedContext) !== NoContext &&
       // Check if we're not already rendering
+      // executionContext 不包含 RenderContext或CommitContext
       (executionContext & (RenderContext | CommitContext)) === NoContext
     ) {
       // Register pending interactions on the root to avoid losing traced interaction data.
@@ -623,6 +628,7 @@ function markUpdateLaneFromFiberToRoot(
   lane: Lane,
 ): FiberRoot | null {
   // Update the source fiber's lanes
+  // mergeLanes a | b
   sourceFiber.lanes = mergeLanes(sourceFiber.lanes, lane);
   let alternate = sourceFiber.alternate;
   if (alternate !== null) {
@@ -1040,6 +1046,9 @@ function performSyncWorkOnRoot(root) {
     executionContext |= RetryAfterError;
 
     // If an error occurred during hydration,
+
+
+    
     // discard server response and fall back to client side render.
     if (root.hydrate) {
       root.hydrate = false;
@@ -1069,6 +1078,7 @@ function performSyncWorkOnRoot(root) {
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
+  // 进入 commit 阶段
   commitRoot(root);
 
   // Before exiting, make sure there's a callback scheduled for the next
@@ -1531,6 +1541,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
   }
 
   // Set this to null to indicate there's no in-progress render.
+  // 重置变量，表面render结束
   workInProgressRoot = null;
   workInProgressRootRenderLanes = NoLanes;
 
@@ -1758,6 +1769,7 @@ function commitRoot(root) {
 }
 
 function commitRootImpl(root, renderPriorityLevel) {
+  debugger
   do {
     // `flushPassiveEffects` will call `flushSyncUpdateQueue` at the end, which
     // means `flushPassiveEffects` will sometimes result in additional

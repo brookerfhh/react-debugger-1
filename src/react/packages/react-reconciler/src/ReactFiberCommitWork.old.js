@@ -272,10 +272,11 @@ export function commitBeforeMutationEffects(
   root: FiberRoot,
   firstChild: Fiber,
 ) {
+  
   focusedInstanceHandle = prepareForCommit(root.containerInfo);
-  // nextEffect 设置为第一个子元素
+  // nextEffect 设置为第一个子元素, firstChild 为 rootFiber
   nextEffect = firstChild;
-  // 开始循环effect链表
+  // 开始循环effectList链表
   commitBeforeMutationEffects_begin();
 
   // We no longer need to track the active instance fiber
@@ -287,7 +288,7 @@ export function commitBeforeMutationEffects(
 }
 
 function commitBeforeMutationEffects_begin() {
-  // 循环 effect 链
+  // 循环 effectList 链
   // 主要是调用类组件的 getSnapshotBeforeUpdate 生命周期函数
   while (nextEffect !== null) {
     const fiber = nextEffect;
@@ -302,10 +303,12 @@ function commitBeforeMutationEffects_begin() {
     }
 
     const child = fiber.child;
+    console.log('BeforeMutationMask===', (fiber.subtreeFlags & BeforeMutationMask), NoFlags)
     if (
       (fiber.subtreeFlags & BeforeMutationMask) !== NoFlags &&
       child !== null
     ) {
+      // 设置 child.return = fiber;
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
     } else {
@@ -1422,7 +1425,7 @@ function commitPlacement(finishedWork: Fiber): void {
   // children to find all the terminal nodes.
   // 是渲染容器
   if (isContainer) {
-    // 向父节点中追加节点  或者 将子节点插入到 before 节点的前面
+    // 向渲染容器中追加节点  或者 将子节点插入到 before 节点的前面
     insertOrAppendPlacementNodeIntoContainer(finishedWork, before, parent);
   } else {
     // 非渲染容器
@@ -2026,6 +2029,7 @@ function commitMutationEffects_begin(
     }
 
     const child = fiber.child;
+    console.log('fiber.subtreeFlags & MutationMask===', fiber.subtreeFlags, MutationMask, (fiber.subtreeFlags & MutationMask))
     if ((fiber.subtreeFlags & MutationMask) !== NoFlags && child !== null) {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
@@ -2105,10 +2109,14 @@ function commitMutationEffectsOnFiber(
   // bitmap value, we remove the secondary effects from the effect tag and
   // switch on that value.
   const primaryFlags = flags & (Placement | Update | Hydrating);
-  // 匹配相关操作
+  console.log('finishedWork===', finishedWork, flags, flags & (Placement | Update | Hydrating))
+  // 匹配相关操作 
   outer: switch (primaryFlags) {
     // 针对该节点以及子节点进行插入操作
     case Placement: {
+      /* 
+        mount时，依次将根元素到所有叶子元素的所有dom元素  插入到 根容器<div id=“root”></div>
+      */
       commitPlacement(finishedWork);
       // Clear the "placement" from effect tag so that we know that this is
       // inserted, before any life-cycles like componentDidMount gets called.

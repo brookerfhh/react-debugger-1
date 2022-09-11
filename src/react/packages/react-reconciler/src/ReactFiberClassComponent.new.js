@@ -205,7 +205,7 @@ const classComponentUpdater = {
     const fiber = getInstance(inst);
     const eventTime = requestEventTime();
     const lane = requestUpdateLane(fiber);
-
+    // 创建update
     const update = createUpdate(eventTime, lane);
     update.payload = payload;
     if (callback !== undefined && callback !== null) {
@@ -214,7 +214,7 @@ const classComponentUpdater = {
       }
       update.callback = callback;
     }
-
+    // enqueueUpdate用来将update加入updateQueue队列
     enqueueUpdate(fiber, update, lane);
     const root = scheduleUpdateOnFiber(fiber, lane, eventTime);
     if (root !== null) {

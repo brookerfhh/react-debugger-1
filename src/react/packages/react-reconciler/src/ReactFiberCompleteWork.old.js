@@ -768,7 +768,7 @@ function bubbleProperties(completedWork: Fiber) {
         );
 
         // "Static" flags share the lifetime of the fiber/hook they belong to,
-        // so we should bubble those up even during a bailout. All the other
+        // so we should bubble those up even during a bailout. All the otherbbb  
         // flags have a lifetime only of a single render + commit, so we should
         // ignore them.
         subtreeFlags |= child.subtreeFlags & StaticMask;
@@ -918,7 +918,6 @@ function completeWork(
             workInProgress,
           );
           // 创建当前dom对象下的所有子节点 
-          
           appendAllChildren(instance, workInProgress, false, false);
           // dom节点赋值给stateNode属性
           workInProgress.stateNode = instance;
@@ -927,6 +926,7 @@ function completeWork(
           // (eg DOM renderer supports auto-focus for certain elements).
           // Make sure such renderers get scheduled for later work.
           // finalizeInitialChildren 用来为 DOM 节点设置属性
+          //  设置dom的prop属性
           if (
             finalizeInitialChildren(
               instance,
@@ -945,6 +945,7 @@ function completeWork(
           markRef(workInProgress);
         }
       }
+      // 根据fiber.child及fiber.child.sibling更新subtreeFlags和childLanes
       bubbleProperties(workInProgress);
       return null;
     }

@@ -572,7 +572,7 @@ export function scheduleUpdateOnFiber(
     // legacy模式 走这里
     if (
       // Check if we're inside unbatchedUpdates
-      // 检测是否处于非批量更新模式
+      // 检测是否处于非批量更新模式, 判断是否合成事件
       (executionContext & LegacyUnbatchedContext) !== NoContext &&
       // Check if we're not already rendering
       // 检测是否没有处于正在进行渲染的任务
@@ -589,9 +589,11 @@ export function scheduleUpdateOnFiber(
       // 进入render 和 commit 阶段
       performSyncWorkOnRoot(root);
     } else {
-      // 进入一步render
+      // 进入异步render
       ensureRootIsScheduled(root, eventTime);
       schedulePendingInteractions(root, lane);
+      // 合成事件executionContext = 000000110 = 6
+      // 原生事件executionContext = 0,setTimeout 执行是也是0，所以setTimeout和原生事件走的是同步更新
       if (executionContext === NoContext) {
         // Flush the synchronous work now, unless we're already working or inside
         // a batch. This is intentionally inside scheduleUpdateOnFiber instead of
@@ -872,6 +874,8 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
 
     // We now have a consistent tree. The next step is either to commit it,
     // or, if something suspended, wait to commit it after a timeout.
+    // fiberRoot.current = rootFiber
+    // finishedWork = rootFiber.alternate
     const finishedWork: Fiber = (root.current.alternate: any);
     root.finishedWork = finishedWork;
     root.finishedLanes = lanes;
@@ -1087,7 +1091,8 @@ function performSyncWorkOnRoot(root) {
 
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
-  // root.current.alternate为刚构建好的workInProgress树
+  // root.current.alternate为刚构建好的workInProgress树 赋值给finishedWork
+  // finishedWork即workInProgress树构建完成 render阶段结束，
   const finishedWork: Fiber = (root.current.alternate: any);
   console.info('finishedWork===', finishedWork)
   root.finishedWork = finishedWork;
@@ -1228,13 +1233,16 @@ export function discreteUpdates<A, B, C, D, R>(
 export function unbatchedUpdates<A, R>(fn: (a: A) => R, a: A): R {
   
   const prevExecutionContext = executionContext;
-  
+
   executionContext &= ~BatchedContext;
   executionContext |= LegacyUnbatchedContext;
   try {
     return fn(a);
   } finally {
     executionContext = prevExecutionContext;
+    // 通过executionContext去判断，原生事件和setTimeout中的executionContext值是0，会走同步更新的方式
+    // 其他情况executionContext的值不为0，走异步批处理的方式
+    // NoContext = 0
     if (executionContext === NoContext) {
       // Flush the immediate callbacks that were scheduled during this batch
       resetRenderTimer();
@@ -1313,6 +1321,10 @@ export function popRenderLanes(fiber: Fiber) {
   初始化workInProgress 为 rootFiber的复制，并且通过alternate互相引用
   即 rootFiber.alternate = workInProgress
     workInProgress.alternate = rootFiber
+
+                    FiberRoot
+            /       alternate        \
+    Current rootFiber ————> workInProgress rootFiber
 */
 function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   // 为FiberRoot 添加 finishedWork和finishedLanes 属性
@@ -1519,7 +1531,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 
   // If the root or lanes have changed, throw out the existing stack
   // and prepare a fresh one. Otherwise we'll continue where we left off.
-  // 判断条件为true 说明发生了任务的打断，
+  // 判断条件为true 说明是 首次渲染 || 发生了任务的打断，
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
     // prepareFreshStack 为 取消之前构建的workInProgress，重置workInProgress
     // 初始化 或 重置root的finishedWork 和 finishedLanes属性
@@ -1702,6 +1714,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   ReactCurrentOwner.current = null;
 }
 /* 
+首次渲染
   1、创建Fiber
   2、创建每个节点的这是DOM对象 并添加到stateNode属性中
   3、收集要执行DOM操作的Fiber节点，即每个节点需要做什么DOM操作，储存到 effect 链接结构
@@ -1722,8 +1735,10 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
  
     // Check if the work completed or if something threw.
     // flags === 0
+    // Incomplete = /*                   */ 0b0000000010000000000000;
     console.log('completedWork.flags & Incomplete===', completedWork.flags & Incomplete)
     // 如果有副作用  并且 没有结束
+    // completeWork.flags 不包含 Incomplete ?
     if ((completedWork.flags & Incomplete) === NoFlags) {
       setCurrentDebugFiberInDEV(completedWork);
       let next;
@@ -1750,7 +1765,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
       }
       
     } else {
-      debugger
+      
       // This fiber did not complete because something threw. Pop values off
       // the stack without entering the complete phase. If this is a boundary,
       // capture values if possible.
@@ -1814,6 +1829,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
 }
 
 function commitRoot(root) {
+  // 获取当前优先级
   const previousUpdateLanePriority = getCurrentUpdateLanePriority();
   try {
     // 设置最高优先级  commit阶段不可被暂停
@@ -1827,9 +1843,13 @@ function commitRoot(root) {
 }
 /* 
   commit阶段可以分为3个子阶段：
-    1 before mutation阶段，执行DOM操作前
+    1 before mutation阶段，执行DOM操作前,
+      这个阶段 DOM 节点还没有被渲染到界面上去，过程中会触发 getSnapshotBeforeUpdate，也会处理 useEffect 钩子相关的调度逻辑
     2 mutation阶段，执行DOM操作
+      这个阶段负责 DOM 节点的渲染。在渲染过程中，会遍历 effectList，根据 flags（effectTag）的不同，执行不同的 DOM 操作。
     3 layout阶段，执行DOM操作后
+      这个阶段处理 DOM 渲染完毕之后的收尾逻辑。比如调用 componentDidMount/componentDidUpdate，调用 useLayoutEffect 钩子函数的回调等。
+      把 fiberRoot 的 current 指针指向 workInProgress Fiber 树
 */
 function commitRootImpl(root, renderPriorityLevel) {
   do {
@@ -1839,7 +1859,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     // no more pending effects.
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
-    // 
+    // 调用flushPassiveEffects执行完所有effect的任务
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
@@ -1950,11 +1970,14 @@ function commitRootImpl(root, renderPriorityLevel) {
       (BeforeMutationMask | MutationMask | LayoutMask | PassiveMask)) !==
     NoFlags;
 
+  // 有副作用，执行更新
   if (subtreeHasEffects || rootHasEffect) {
+    // 保存之前的优先级，以同步优先级执行，执行完毕后恢复之前优先级
     const previousLanePriority = getCurrentUpdateLanePriority();
     setCurrentUpdateLanePriority(SyncLanePriority);
 
     const prevExecutionContext = executionContext;
+    // 将当前上下文标记为CommitContext，作为commit阶段的标志
     executionContext |= CommitContext;
     const prevInteractions = pushInteractions(root);
 
@@ -1968,7 +1991,9 @@ function commitRootImpl(root, renderPriorityLevel) {
     // The first phase a "before mutation" phase. We use this phase to read the
     // state of the host tree right before we mutate it. This is where
     // getSnapshotBeforeUpdate is called.
-    // commit第一个子阶段
+    // commit第一个子阶段: 
+    //   before mutation阶段，执行DOM操作前,
+    //   这个阶段 DOM 节点还没有被渲染到界面上去，过程中会触发 getSnapshotBeforeUpdate，也会处理 useEffect 钩子相关的调度逻辑
     const shouldFireAfterActiveInstanceBlur = commitBeforeMutationEffects(
       root,
       finishedWork,
@@ -1988,6 +2013,8 @@ function commitRootImpl(root, renderPriorityLevel) {
 
     // The next phase is the mutation phase, where we mutate the host tree.
     // commit第二个子阶段
+    //   mutation阶段，执行DOM操作
+    //   这个阶段负责 DOM 节点的渲染。在渲染过程中，会遍历 effectList，根据 flags（effectTag）的不同，执行不同的 DOM 操作。
     commitMutationEffects(root, renderPriorityLevel, finishedWork);
 
     if (shouldFireAfterActiveInstanceBlur) {
@@ -2013,6 +2040,9 @@ function commitRootImpl(root, renderPriorityLevel) {
       markLayoutEffectsStarted(lanes);
     }
     // commit第三个子阶段
+    //    layout阶段，执行DOM操作后
+    //    这个阶段处理 DOM 渲染完毕之后的收尾逻辑。比如调用 componentDidMount/componentDidUpdate，调用 useLayoutEffect 钩子函数的回调等。
+    //    把 fiberRoot 的 current 指针指向 workInProgress Fiber 树
     commitLayoutEffects(finishedWork, root, lanes);
     if (__DEV__) {
       if (enableDebugTracing) {
