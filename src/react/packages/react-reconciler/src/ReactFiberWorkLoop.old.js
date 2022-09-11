@@ -1089,9 +1089,11 @@ function performSyncWorkOnRoot(root) {
   // will commit it even if something suspended.
   // root.current.alternate为刚构建好的workInProgress树
   const finishedWork: Fiber = (root.current.alternate: any);
+  console.info('finishedWork===', finishedWork)
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
   // 进入commit 阶段
+  console.log(root)
   commitRoot(root);
 
   // Before exiting, make sure there's a callback scheduled for the next
@@ -1746,6 +1748,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         workInProgress = next;
         return;
       }
+      
     } else {
       debugger
       // This fiber did not complete because something threw. Pop values off

@@ -1232,6 +1232,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
     );
     workInProgress.child = child;
     let node = child;
+    debugger
     while (node) {
       // Mark each child as hydrating. This is a fast path to know whether this
       // tree is part of a hydrating tree. This is used to determine if a child
@@ -1481,7 +1482,6 @@ function mountIndeterminateComponent(
     // Since this is conceptually a new fiber, schedule a Placement effect
     workInProgress.flags |= Placement;
   }
-  debugger
   const props = workInProgress.pendingProps;
   let context;
   if (!disableLegacyContext) {

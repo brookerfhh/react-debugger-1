@@ -24,7 +24,7 @@ const App = () => {
         <span>哈哈</span>
       </p>
       <ClassComponent name="class-hh"></ClassComponent>
-      <FunctionComponent  name="function-hh"></FunctionComponent>
+      {/* <FunctionComponent  name="function-hh"></FunctionComponent> */}
     </div>
   )
 }

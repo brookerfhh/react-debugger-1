@@ -670,15 +670,15 @@ function cutOffTailIfNeeded(
     }
   }
 }
-
+// 主要是由下 向上 收集 优先级 和 flags
 function bubbleProperties(completedWork: Fiber) {
   const didBailout =
     completedWork.alternate !== null &&
     completedWork.alternate.child === completedWork.child;
-
+  
   let newChildLanes = NoLanes;
   let subtreeFlags = NoFlags;
-  // 
+  // 首次渲染
   if (!didBailout) {
     // Bubble up the earliest expiration time.
     if (enableProfilerTimer && (completedWork.mode & ProfileMode) !== NoMode) {
@@ -796,7 +796,7 @@ function completeWork(
   workInProgress: Fiber,
   renderLanes: Lanes,
 ): Fiber | null {
-
+  debugger
   const newProps = workInProgress.pendingProps;
   // 匹配当前Fiber的类型，只有几个需要创建对应的DOM对象
   switch (workInProgress.tag) {
@@ -821,6 +821,7 @@ function completeWork(
       bubbleProperties(workInProgress);
       return null;
     }
+    // rootFiber节点
     case HostRoot: {
       const fiberRoot = (workInProgress.stateNode: FiberRoot);
       if (enableCache) {
@@ -925,6 +926,7 @@ function completeWork(
           // Certain renderers require commit-time effects for initial mount.
           // (eg DOM renderer supports auto-focus for certain elements).
           // Make sure such renderers get scheduled for later work.
+          // finalizeInitialChildren 用来为 DOM 节点设置属性
           if (
             finalizeInitialChildren(
               instance,
