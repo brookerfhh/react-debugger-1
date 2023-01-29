@@ -1222,7 +1222,6 @@ function updateHostRoot(current, workInProgress, renderLanes) {
         }
       }
     }
-    console.log('nextChildren===', nextChildren)
     // mountChildFibers = ChildReconciler(false)
     const child = mountChildFibers(
       workInProgress,
@@ -1232,7 +1231,6 @@ function updateHostRoot(current, workInProgress, renderLanes) {
     );
     workInProgress.child = child;
     let node = child;
-    debugger
     while (node) {
       // Mark each child as hydrating. This is a fast path to know whether this
       // tree is part of a hydrating tree. This is used to determine if a child
@@ -1245,7 +1243,8 @@ function updateHostRoot(current, workInProgress, renderLanes) {
     }
   } else {
     // Otherwise reset hydration state in case we aborted and resumed another
-    // root.
+    // mount
+    console.info('rootFiber mount', current, workInProgress, nextChildren, renderLanes)
     reconcileChildren(current, workInProgress, nextChildren, renderLanes);
     resetHydrationState();
   }
@@ -1481,6 +1480,7 @@ function mountIndeterminateComponent(
     workInProgress.alternate = null;
     // Since this is conceptually a new fiber, schedule a Placement effect
     workInProgress.flags |= Placement;
+    
   }
   const props = workInProgress.pendingProps;
   let context;
@@ -1542,31 +1542,31 @@ function mountIndeterminateComponent(
   // React DevTools reads this flag.
   workInProgress.flags |= PerformedWork;
 
-  if (__DEV__) {
-    // Support for module components is deprecated and is removed behind a flag.
-    // Whether or not it would crash later, we want to show a good message in DEV first.
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      typeof value.render === 'function' &&
-      value.$$typeof === undefined
-    ) {
-      const componentName = getComponentNameFromType(Component) || 'Unknown';
-      if (!didWarnAboutModulePatternComponent[componentName]) {
-        console.error(
-          'The <%s /> component appears to be a function component that returns a class instance. ' +
-            'Change %s to a class that extends React.Component instead. ' +
-            "If you can't use a class try assigning the prototype on the function as a workaround. " +
-            "`%s.prototype = React.Component.prototype`. Don't use an arrow function since it " +
-            'cannot be called with `new` by React.',
-          componentName,
-          componentName,
-          componentName,
-        );
-        didWarnAboutModulePatternComponent[componentName] = true;
-      }
-    }
-  }
+  // if (__DEV__) {
+  //   // Support for module components is deprecated and is removed behind a flag.
+  //   // Whether or not it would crash later, we want to show a good message in DEV first.
+  //   if (
+  //     typeof value === 'object' &&
+  //     value !== null &&
+  //     typeof value.render === 'function' &&
+  //     value.$$typeof === undefined
+  //   ) {
+  //     const componentName = getComponentNameFromType(Component) || 'Unknown';
+  //     if (!didWarnAboutModulePatternComponent[componentName]) {
+  //       console.error(
+  //         'The <%s /> component appears to be a function component that returns a class instance. ' +
+  //           'Change %s to a class that extends React.Component instead. ' +
+  //           "If you can't use a class try assigning the prototype on the function as a workaround. " +
+  //           "`%s.prototype = React.Component.prototype`. Don't use an arrow function since it " +
+  //           'cannot be called with `new` by React.',
+  //         componentName,
+  //         componentName,
+  //         componentName,
+  //       );
+  //       didWarnAboutModulePatternComponent[componentName] = true;
+  //     }
+  //   }
+  // }
 
   if (
     // Run these checks in production only if the flag is off.
@@ -3528,9 +3528,10 @@ function beginWork(
   // move this assignment out of the common path and into each branch.
   workInProgress.lanes = NoLanes;
   // 根据不同workInProgress.tag， 执行不同的创建Fiber
-  // 初始渲染时 第一个时3，然后时APP函数组件组件，即为 2
+  // 初始渲染时 第一个时3, 即rootFiber，然后时APP函数组件组件 的fiber，即为 2
   switch (workInProgress.tag) {
-    // 2 函数组件第一次被渲染时是2，即IndeterminateComponent，第二次才是0，FunctionComponent
+    
+    // 2 FC mount, IndeterminateComponent 是FC mount 时进入的分支，update则进入FunctionComponent分支
     case IndeterminateComponent: {
       return mountIndeterminateComponent(
         current,
@@ -3550,7 +3551,7 @@ function beginWork(
         renderLanes,
       );
     }
-    // 0
+    // 0 FC update
     case FunctionComponent: {
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;

@@ -1686,18 +1686,22 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't
   // need an additional field on the work in progress.
+  /* 
+    unitOfWork 是 workInProgress
+    current 是 workInProgress 对应的currentProgressTree上的同级节点
+  */
   const current = unitOfWork.alternate;
   setCurrentDebugFiberInDEV(unitOfWork);
-
+  
   let next;
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
+     // 循环 向下遍历构建 子级Fiber，即父 => 子 构建Fiber对象
+    // beginWork: 根据current当前节点 创建子节点的fiber，并 返回 新创建的子节点, 如果有多个子节点，则返回第一个子节点的fiber，如果没有子节点，则返回null
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
     
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
-    // 循环 向下遍历构建 子级Fiber，即父 => 子 构建Fiber对象
-    // 返回 next 为当前节点的子节点
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
   }
 
@@ -1706,6 +1710,12 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
     // 子级 向上 回归阶段，即子 => 父 构建Fiber对象
+    /* 
+      首次渲染
+        1、创建Fiber
+        2、创建每个节点的DOM对象 并添加到stateNode属性中
+        3、收集要执行DOM操作的Fiber节点，即每个节点需要做什么DOM操作，储存到 effect 链接结构
+    */
     completeUnitOfWork(unitOfWork);
   } else {
     workInProgress = next;
@@ -1716,7 +1726,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
 /* 
 首次渲染
   1、创建Fiber
-  2、创建每个节点的这是DOM对象 并添加到stateNode属性中
+  2、创建每个节点的DOM对象 并添加到stateNode属性中
   3、收集要执行DOM操作的Fiber节点，即每个节点需要做什么DOM操作，储存到 effect 链接结构
 */
 function completeUnitOfWork(unitOfWork: Fiber): void {
@@ -1736,7 +1746,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
     // Check if the work completed or if something threw.
     // flags === 0
     // Incomplete = /*                   */ 0b0000000010000000000000;
-    console.log('completedWork.flags & Incomplete===', completedWork.flags & Incomplete)
+    // console.log('completedWork.flags & Incomplete===', completedWork.flags & Incomplete)
     // 如果有副作用  并且 没有结束
     // completeWork.flags 不包含 Incomplete ?
     if ((completedWork.flags & Incomplete) === NoFlags) {

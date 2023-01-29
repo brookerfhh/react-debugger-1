@@ -796,7 +796,7 @@ function completeWork(
   workInProgress: Fiber,
   renderLanes: Lanes,
 ): Fiber | null {
-  debugger
+  
   const newProps = workInProgress.pendingProps;
   // 匹配当前Fiber的类型，只有几个需要创建对应的DOM对象
   switch (workInProgress.tag) {
@@ -925,8 +925,12 @@ function completeWork(
           // Certain renderers require commit-time effects for initial mount.
           // (eg DOM renderer supports auto-focus for certain elements).
           // Make sure such renderers get scheduled for later work.
-          // finalizeInitialChildren 用来为 DOM 节点设置属性
-          //  设置dom的prop属性
+          
+          /* 
+          finalizeInitialChildren 
+            1、执行setInitialProperties用来为 DOM 节点设置属性
+            2、返回shouldAutoFocusHostComponent 的执行结果。（只有button、textarea、input、select返回props.autoFocus,其他元素都返回false）
+          */
           if (
             finalizeInitialChildren(
               instance,
@@ -936,6 +940,7 @@ function completeWork(
               currentHostContext,
             )
           ) {
+            // 标记flags 为 Update
             markUpdate(workInProgress);
           }
         }
@@ -950,6 +955,8 @@ function completeWork(
       return null;
     }
     case HostText: {
+      
+      
       const newText = newProps;
       if (current && workInProgress.stateNode != null) {
         const oldText = current.memoizedProps;

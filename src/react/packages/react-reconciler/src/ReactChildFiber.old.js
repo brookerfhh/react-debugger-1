@@ -259,7 +259,7 @@ function resolveLazy(lazyType) {
 // a compiler or we can do it manually. Helpers that don't need this branching
 // live outside of this function.
 /* 
-  shouldTrackSideEffects 标识,是否为Fiber对象添加effectTag 
+  shouldTrackSideEffects 标识,是否为Fiber 标记flags
     true 添加,false 不添加
     对于初始渲染来说,只有根组件需要添加,其他元素不需要添加,防止过多的DOM操作
 */
@@ -1252,6 +1252,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     // Handle object types
     // 判断newChild是否是对象类型：数组或对象
     const isObject = typeof newChild === 'object' && newChild !== null;
+    
     // 单个对象
     if (isObject) {
       switch (newChild.$$typeof) {

@@ -25,9 +25,9 @@ function FunctionComponent({name}) {
 const App = () => {
   return (
     <div className="box border">
-      <p>
-        <span>方</span>
-        <span>哈哈</span>
+      <p style={{border:'1px solid blue'}}>
+        <span>方<span>hh</span></span>
+        <button>哈哈</button>
       </p>
       <ClassComponent name="class-hh"></ClassComponent>
       <FunctionComponent  name="function-hh"></FunctionComponent>
