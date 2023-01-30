@@ -1290,6 +1290,10 @@ function ChildReconciler(shouldTrackSideEffects) {
       }
     }
 
+    /* 
+       如果这时子元素是字符串或者数字，按照文字节点来处理
+        这些文字不会被转换成 fiber, 而是作为父元素的 prop 来处理
+    */
     if (typeof newChild === 'string' || typeof newChild === 'number') {
       return placeSingleChild(
         reconcileSingleTextNode(

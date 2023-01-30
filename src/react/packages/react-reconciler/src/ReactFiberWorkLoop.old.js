@@ -1542,11 +1542,11 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
   // 初始化一个set 数据结构
   const prevInteractions = pushInteractions(root);
 
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logRenderStarted(lanes);
-    }
-  }
+  // if (__DEV__) {
+  //   if (enableDebugTracing) {
+  //     logRenderStarted(lanes);
+  //   }
+  // }
 
   if (enableSchedulingProfiler) {
     markRenderStarted(lanes);
@@ -1695,6 +1695,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   
   let next;
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
+     //启动分析器的定时器，并赋成当前时间
     startProfilerTimer(unitOfWork);
      // 循环 向下遍历构建 子级Fiber，即父 => 子 构建Fiber对象
     // beginWork: 根据current当前节点 创建子节点的fiber，并 返回 新创建的子节点, 如果有多个子节点，则返回第一个子节点的fiber，如果没有子节点，则返回null
@@ -1745,10 +1746,9 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
  
     // Check if the work completed or if something threw.
     // flags === 0
-    // Incomplete = /*                   */ 0b0000000010000000000000;
-    // console.log('completedWork.flags & Incomplete===', completedWork.flags & Incomplete)
+    // Incomplete 标记异常
     // 如果有副作用  并且 没有结束
-    // completeWork.flags 不包含 Incomplete ?
+    // completeWork.flags 有异常
     if ((completedWork.flags & Incomplete) === NoFlags) {
       setCurrentDebugFiberInDEV(completedWork);
       let next;
