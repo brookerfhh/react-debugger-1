@@ -37,6 +37,7 @@ export const LifecycleEffectMask = Passive | Update | Callback | Ref | Snapshot;
 export const HostEffectMask = /*               */ 0b0000000001111111111111;
 
 // These are not really side effects, but we still reuse this field.
+// 标记fiber异常
 export const Incomplete = /*                   */ 0b0000000010000000000000;
 export const ShouldCapture = /*                */ 0b0000000100000000000000;
 // TODO (effects) Remove this bit once the new reconciler is synced to the old.
