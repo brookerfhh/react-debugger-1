@@ -208,7 +208,7 @@ if (supportsMutation) {
     let node = workInProgress.child;
     // 循环创建 子Fiber对应的dom对象
     while (node !== null) {
-      // 如果是普通 的react元素  或者 文本元素
+      // 步骤1： 如果是普通 的dom元素  或者 文本元素， 将子级追加到父级中的DOM中
       if (node.tag === HostComponent || node.tag === HostText) {
         // 将子级追加到父级中 parent.appendChild(node.stateNode)
         appendInitialChild(parent, node.stateNode);
@@ -217,6 +217,7 @@ if (supportsMutation) {
         // down its children. Instead, we'll get insertions from each child in
         // the portal directly.
       } else if (node.child !== null) {
+        // 继续向下遍历，直到找到第一层DOM元素类型
         node.child.return = node;
         node = node.child;
         continue;
@@ -225,7 +226,7 @@ if (supportsMutation) {
       if (node === workInProgress) {
         return;
       }
-      // 处理子级的兄弟节点
+      // 直到没有下一个兄弟节点
       while (node.sibling === null) {
         // 没有父级，说明已经到顶部了
         if (node.return === null || node.return === workInProgress) {
@@ -233,6 +234,7 @@ if (supportsMutation) {
         }
         node = node.return;
       }
+      // 将兄弟节点赋给node， 执行上面的步骤1
       node.sibling.return = node.return;
       node = node.sibling;
     }
@@ -491,6 +493,7 @@ if (supportsMutation) {
     newProps: Props,
     rootContainerInstance: Container,
   ) {
+    debugger
     const currentInstance = current.stateNode;
     const oldProps = current.memoizedProps;
     // If there are no effects associated with this node, then none of our children had any updates.
@@ -955,8 +958,6 @@ function completeWork(
       return null;
     }
     case HostText: {
-      
-      
       const newText = newProps;
       if (current && workInProgress.stateNode != null) {
         const oldText = current.memoizedProps;
