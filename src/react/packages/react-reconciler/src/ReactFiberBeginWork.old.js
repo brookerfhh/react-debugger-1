@@ -285,7 +285,7 @@ export function reconcileChildren(
     // If we had any progressed work already, that is invalid at this point so
     // let's throw it out.
     // 新旧 Fiber对比
-    // 首次渲染 rootFiber 不为null，所以走else逻辑
+    // mount时，rootFiber的current不为空，所以会在构建子节点时，给子节点的flags打上Placement的标记
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,

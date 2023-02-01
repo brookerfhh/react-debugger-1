@@ -332,7 +332,6 @@ export function updateContainer(
   // being called "element".
   // 把将要更新的任务挂载到payload中
   update.payload = {element};
-  console.log('首次update.payload====', update.payload)
   callback = callback === undefined ? null : callback;
   if (callback !== null) {
     if (__DEV__) {

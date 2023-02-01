@@ -27,7 +27,7 @@ import {
   enableSchedulerTracing,
   warnAboutUnmockedScheduler,
   deferRenderPhaseUpdateToNextBatch,
-  enableDebugTracing,
+  // enableDebugTracing,
   enableSchedulingProfiler,
   disableSchedulerTimeoutInWorkLoop,
   enableStrictEffects,
@@ -55,14 +55,14 @@ import {
   Passive as HookPassive,
 } from './ReactHookEffectTags';
 import {
-  logCommitStarted,
+  // logCommitStarted,
   logCommitStopped,
-  logLayoutEffectsStarted,
-  logLayoutEffectsStopped,
+  // logLayoutEffectsStarted,
+  // logLayoutEffectsStopped,
   logPassiveEffectsStarted,
   logPassiveEffectsStopped,
-  logRenderStarted,
-  logRenderStopped,
+  // logRenderStarted,
+  // logRenderStopped,
 } from './DebugTracing';
 import {
   markCommitStarted,
@@ -1091,14 +1091,12 @@ function performSyncWorkOnRoot(root) {
 
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
-  // root.current.alternate为刚构建好的workInProgress树 赋值给finishedWork
-  // finishedWork即workInProgress树构建完成 render阶段结束，
+  // root.current.alternate为刚构建好的workInProgress树 的rootFiber 赋值给finishedWork
   const finishedWork: Fiber = (root.current.alternate: any);
-  console.info('finishedWork===', finishedWork)
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
   // 进入commit 阶段
-  console.log(root)
+  console.log('进入commit 阶段, finishedWork===', finishedWork)
   commitRoot(root);
 
   // Before exiting, make sure there's a callback scheduled for the next
@@ -1579,11 +1577,11 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
     );
   }
 
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logRenderStopped();
-    }
-  }
+  // if (__DEV__) {
+  //   if (enableDebugTracing) {
+  //     logRenderStopped();
+  //   }
+  // }
 
   if (enableSchedulingProfiler) {
     markRenderStopped();
@@ -1621,11 +1619,11 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
 
   const prevInteractions = pushInteractions(root);
 
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logRenderStarted(lanes);
-    }
-  }
+  // if (__DEV__) {
+  //   if (enableDebugTracing) {
+  //     logRenderStarted(lanes);
+  //   }
+  // }
 
   if (enableSchedulingProfiler) {
     markRenderStarted(lanes);
@@ -1647,11 +1645,11 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
   popDispatcher(prevDispatcher);
   executionContext = prevExecutionContext;
 
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logRenderStopped();
-    }
-  }
+  // if (__DEV__) {
+  //   if (enableDebugTracing) {
+  //     logRenderStopped();
+  //   }
+  // }
 
   // Check if the tree has completed.
   if (workInProgress !== null) {
@@ -1886,22 +1884,22 @@ function commitRootImpl(root, renderPriorityLevel) {
   const finishedWork = root.finishedWork;
   const lanes = root.finishedLanes;
 
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logCommitStarted(lanes);
-    }
-  }
+  // if (__DEV__) {
+  //   if (enableDebugTracing) {
+  //     logCommitStarted(lanes);
+  //   }
+  // }
 
   if (enableSchedulingProfiler) {
     markCommitStarted(lanes);
   }
 
   if (finishedWork === null) {
-    if (__DEV__) {
-      if (enableDebugTracing) {
-        logCommitStopped();
-      }
-    }
+    // if (__DEV__) {
+    //   if (enableDebugTracing) {
+    //     logCommitStopped();
+    //   }
+    // }
 
     if (enableSchedulingProfiler) {
       markCommitStopped();
@@ -1975,6 +1973,31 @@ function commitRootImpl(root, renderPriorityLevel) {
   // to check for the existence of `firstEffect` to satsify Flow. I think the
   // only other reason this optimization exists is because it affects profiling.
   // Reconsider whether this is necessary.
+  /* 
+  BeforeMutationMask = Update | Snapshot 
+  MutationMask =
+    Placement |
+    Update |
+    ChildDeletion |
+    ContentReset |
+    Ref |
+    Hydrating |
+    Visibility;
+  LayoutMask = Update | Callback | Ref;
+  PassiveMask = Passive | ChildDeletion;
+  StaticMask = PassiveStatic;
+
+    每个mast 由 与该阶段相关的副作用flags组合而成
+     BeforeMutationMask 有 Update 与 Snapshot，代表BeforeMutation阶段与这两个flags相关，
+     由于Snapshot是ClassComponent 存在更新，且定义了getSnapshotBeforeUpdate方法后才会设置的flags，
+     因此可以判断BeforeMutationMask节点会执行getSnapshotBeforeUpdate
+
+  */
+  /* 
+    在三个子阶段执行之前，需要判断本次更新是否设计 与三个子阶段相关的副作用
+    subtreeHasEffects 代表子孙存在副作用flags
+    rootHasEffect 代表workInProgress 的 rootFiber 本身存在副作用flags
+  */
   const subtreeHasEffects =
     (finishedWork.subtreeFlags &
       (BeforeMutationMask | MutationMask | LayoutMask | PassiveMask)) !==
@@ -1984,7 +2007,7 @@ function commitRootImpl(root, renderPriorityLevel) {
       (BeforeMutationMask | MutationMask | LayoutMask | PassiveMask)) !==
     NoFlags;
 
-  // 有副作用，执行更新
+  // 有副作用，执行更新，进入三个子阶段
   if (subtreeHasEffects || rootHasEffect) {
     // 保存之前的优先级，以同步优先级执行，执行完毕后恢复之前优先级
     const previousLanePriority = getCurrentUpdateLanePriority();
@@ -2045,11 +2068,11 @@ function commitRootImpl(root, renderPriorityLevel) {
     // The next phase is the layout phase, where we call effects that read
     // the host tree after it's been mutated. The idiomatic use case for this is
     // layout, but class component lifecycles also fire here for legacy reasons.
-    if (__DEV__) {
-      if (enableDebugTracing) {
-        logLayoutEffectsStarted(lanes);
-      }
-    }
+    // if (__DEV__) {
+    //   if (enableDebugTracing) {
+    //     logLayoutEffectsStarted(lanes);
+    //   }
+    // }
     if (enableSchedulingProfiler) {
       markLayoutEffectsStarted(lanes);
     }
@@ -2058,11 +2081,11 @@ function commitRootImpl(root, renderPriorityLevel) {
     //    这个阶段处理 DOM 渲染完毕之后的收尾逻辑。比如调用 componentDidMount/componentDidUpdate，调用 useLayoutEffect 钩子函数的回调等。
     //    把 fiberRoot 的 current 指针指向 workInProgress Fiber 树
     commitLayoutEffects(finishedWork, root, lanes);
-    if (__DEV__) {
-      if (enableDebugTracing) {
-        logLayoutEffectsStopped();
-      }
-    }
+    // if (__DEV__) {
+    //   if (enableDebugTracing) {
+    //     logLayoutEffectsStopped();
+    //   }
+    // }
 
     if (enableSchedulingProfiler) {
       markLayoutEffectsStopped();

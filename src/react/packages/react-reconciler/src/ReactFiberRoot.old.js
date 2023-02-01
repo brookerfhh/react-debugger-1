@@ -94,7 +94,6 @@ export function createFiberRoot(
 ): FiberRoot {
   // 创建FiberRoot
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
-  console.log('FiberRoot====', root)
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
   }
@@ -107,7 +106,6 @@ export function createFiberRoot(
   root.current = uninitializedFiber;
   // rootFiber.stateNode => fiberRoot
   uninitializedFiber.stateNode = root;
-  console.log('rootFiber====', uninitializedFiber)
   if (enableCache) {
     const initialCache = new Map();
     root.pooledCache = initialCache;

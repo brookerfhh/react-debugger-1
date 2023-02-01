@@ -329,21 +329,21 @@ export function prepareUpdate(
   rootContainerInstance: Container,
   hostContext: HostContext,
 ): null | Array<mixed> {
-  if (__DEV__) {
-    const hostContextDev = ((hostContext: any): HostContextDev);
-    if (
-      typeof newProps.children !== typeof oldProps.children &&
-      (typeof newProps.children === 'string' ||
-        typeof newProps.children === 'number')
-    ) {
-      const string = '' + newProps.children;
-      const ownAncestorInfo = updatedAncestorInfo(
-        hostContextDev.ancestorInfo,
-        type,
-      );
-      validateDOMNesting(null, string, ownAncestorInfo);
-    }
-  }
+  // if (__DEV__) {
+  //   const hostContextDev = ((hostContext: any): HostContextDev);
+  //   if (
+  //     typeof newProps.children !== typeof oldProps.children &&
+  //     (typeof newProps.children === 'string' ||
+  //       typeof newProps.children === 'number')
+  //   ) {
+  //     const string = '' + newProps.children;
+  //     const ownAncestorInfo = updatedAncestorInfo(
+  //       hostContextDev.ancestorInfo,
+  //       type,
+  //     );
+  //     validateDOMNesting(null, string, ownAncestorInfo);
+  //   }
+  // }
   return diffProperties(
     domElement,
     type,

@@ -493,7 +493,6 @@ if (supportsMutation) {
     newProps: Props,
     rootContainerInstance: Container,
   ) {
-    debugger
     const currentInstance = current.stateNode;
     const oldProps = current.memoizedProps;
     // If there are no effects associated with this node, then none of our children had any updates.
@@ -799,7 +798,6 @@ function completeWork(
   workInProgress: Fiber,
   renderLanes: Lanes,
 ): Fiber | null {
-  
   const newProps = workInProgress.pendingProps;
   // 匹配当前Fiber的类型，只有几个需要创建对应的DOM对象
   switch (workInProgress.tag) {
@@ -934,15 +932,14 @@ function completeWork(
             1、执行setInitialProperties用来为 DOM 节点设置属性
             2、返回shouldAutoFocusHostComponent 的执行结果。（只有button、textarea、input、select返回props.autoFocus,其他元素都返回false）
           */
-          if (
-            finalizeInitialChildren(
-              instance,
-              type,
-              newProps,
-              rootContainerInstance,
-              currentHostContext,
-            )
-          ) {
+         const finalizeInitialChildrenRes = finalizeInitialChildren(
+          instance,
+          type,
+          newProps,
+          rootContainerInstance,
+          currentHostContext,
+        )
+          if (finalizeInitialChildrenRes) {
             // 标记flags 为 Update
             markUpdate(workInProgress);
           }
