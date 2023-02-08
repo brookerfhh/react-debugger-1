@@ -143,10 +143,10 @@ import {
 import {didWarnAboutReassigningProps} from './ReactFiberBeginWork.old';
 import {doesFiberContain} from './ReactFiberTreeReflection';
 
-let didWarnAboutUndefinedSnapshotBeforeUpdate: Set<mixed> | null = null;
-if (__DEV__) {
-  didWarnAboutUndefinedSnapshotBeforeUpdate = new Set();
-}
+// let didWarnAboutUndefinedSnapshotBeforeUpdate: Set<mixed> | null = null;
+// if (__DEV__) {
+//   didWarnAboutUndefinedSnapshotBeforeUpdate = new Set();
+// }
 
 const PossiblyWeakSet = typeof WeakSet === 'function' ? WeakSet : Set;
 
@@ -267,16 +267,15 @@ function safelyCallDestroy(
 
 let focusedInstanceHandle: null | Fiber = null;
 let shouldFireAfterActiveInstanceBlur: boolean = false;
-// 初始化是不执行
+
 export function commitBeforeMutationEffects(
   root: FiberRoot,
   firstChild: Fiber,
 ) {
-  
+
   focusedInstanceHandle = prepareForCommit(root.containerInfo);
-  // nextEffect 设置为第一个子元素, firstChild 为 rootFiber
+  // 设置全局变量nextEffect 设置为rootFiber
   nextEffect = firstChild;
-  // 开始循环effectList链表
   commitBeforeMutationEffects_begin();
 
   // We no longer need to track the active instance fiber
@@ -286,15 +285,20 @@ export function commitBeforeMutationEffects(
 
   return shouldFire;
 }
-
+/* 
+ 向下遍历直到 满足以下条件:
+      当前fiber不存在子fiber
+      当前fiber的子fiber不包含 BeforeMutationMask子阶段对应的flags
+  然后执行commitBeforeMutationEffects_complete
+*/
 function commitBeforeMutationEffects_begin() {
-  // 循环 effectList 链
-  // 主要是调用类组件的 getSnapshotBeforeUpdate 生命周期函数
+
   while (nextEffect !== null) {
     const fiber = nextEffect;
 
     // TODO: Should wrap this in flags check, too, as optimization
     const deletions = fiber.deletions;
+    // 如果有删除的flags
     if (deletions !== null) {
       for (let i = 0; i < deletions.length; i++) {
         const deletion = deletions[i];
@@ -303,7 +307,7 @@ function commitBeforeMutationEffects_begin() {
     }
 
     const child = fiber.child;
-    console.log('BeforeMutationMask===', (fiber.subtreeFlags & BeforeMutationMask), NoFlags)
+    // 如果子节点有 BeforeMutationMask 的flags，将nextEffect赋值给子节点，
     if (
       (fiber.subtreeFlags & BeforeMutationMask) !== NoFlags &&
       child !== null
@@ -312,35 +316,45 @@ function commitBeforeMutationEffects_begin() {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
     } else {
+      // 没有子节点，或者子节点没有flags标识
       commitBeforeMutationEffects_complete();
     }
   }
 }
-
+/* 
+  对当前fiber 执行flags对应操作，即执行commitBeforeMutationEffectsOnFiber
+  如果当前fiber存在兄弟fiber节点sibling，则将sibling赋值给nextEffect去执行commitBeforeMutationEffects_begin
+  如果不存在，则对父节点fiber执行commitBeforeMutationEffects_complete
+*/
 function commitBeforeMutationEffects_complete() {
   while (nextEffect !== null) {
     const fiber = nextEffect;
-    if (__DEV__) {
-      setCurrentDebugFiberInDEV(fiber);
-      invokeGuardedCallback(
-        null,
-        commitBeforeMutationEffectsOnFiber,
-        null,
-        fiber,
-      );
-      if (hasCaughtError()) {
-        const error = clearCaughtError();
-        captureCommitPhaseError(fiber, fiber.return, error);
-      }
-      resetCurrentDebugFiberInDEV();
-    } else {
+    // if (__DEV__) {
+    //   setCurrentDebugFiberInDEV(fiber);
+    //   invokeGuardedCallback(
+    //     null,
+    //     commitBeforeMutationEffectsOnFiber,
+    //     null,
+    //     fiber,
+    //   );
+    //   if (hasCaughtError()) {
+    //     const error = clearCaughtError();
+    //     captureCommitPhaseError(fiber, fiber.return, error);
+    //   }
+    //   resetCurrentDebugFiberInDEV();
+    // } else {
       try {
-        // 主要是执行类组件的 getSnapshotBeforeUpdate 生命周期函数
+        /* 
+          主要是处理包含Snapshot flag的fiber， 主要处理两种类型的fiber
+            ClassComponent，执行getSnapshotBeforeUpdate方法
+            HostRoot，即rootFiber，清空HostRoot挂载的内容，方便Mutation阶段渲染
+        */
         commitBeforeMutationEffectsOnFiber(fiber);
       } catch (error) {
+        // 捕获commit阶段的异常
         captureCommitPhaseError(fiber, fiber.return, error);
       }
-    }
+    // }
 
     const sibling = fiber.sibling;
     if (sibling !== null) {
@@ -353,6 +367,11 @@ function commitBeforeMutationEffects_complete() {
   }
 }
 
+/* 
+    主要是处理包含Snapshot flag的fiber， 主要处理两种类型的fiber
+      ClassComponent，执行getSnapshotBeforeUpdate方法
+      HostRoot，即rootFiber，清空HostRoot挂载的内容，方便Mutation阶段渲染
+  */
 function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
   const current = finishedWork.alternate;
   const flags = finishedWork.flags;
@@ -369,7 +388,11 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
       beforeActiveInstanceBlur(finishedWork);
     }
   }
-  // 有flags 需要执行
+  /* 
+    主要是处理包含Snapshot flag的fiber， 主要处理两种类型的fiber
+      ClassComponent，执行getSnapshotBeforeUpdate方法
+      HostRoot，即rootFiber，清空HostRoot挂载的内容，方便Mutation阶段渲染
+  */
   if ((flags & Snapshot) !== NoFlags) {
     setCurrentDebugFiberInDEV(finishedWork);
 
@@ -379,6 +402,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
       case SimpleMemoComponent: {
         break;
       }
+      // 主要是处理ClassComponent类组件，执行类组件的 getSnapshotBeforeUpdate 生命周期函数
       case ClassComponent: {
         if (current !== null) {
           const prevProps = current.memoizedProps;
@@ -421,23 +445,24 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
               : resolveDefaultProps(finishedWork.type, prevProps),
             prevState,
           );
-          if (__DEV__) {
-            const didWarnSet = ((didWarnAboutUndefinedSnapshotBeforeUpdate: any): Set<mixed>);
-            if (snapshot === undefined && !didWarnSet.has(finishedWork.type)) {
-              didWarnSet.add(finishedWork.type);
-              console.error(
-                '%s.getSnapshotBeforeUpdate(): A snapshot value (or null) ' +
-                  'must be returned. You have returned undefined.',
-                getComponentNameFromFiber(finishedWork),
-              );
-            }
-          }
+          // if (__DEV__) {
+          //   const didWarnSet = ((didWarnAboutUndefinedSnapshotBeforeUpdate: any): Set<mixed>);
+          //   if (snapshot === undefined && !didWarnSet.has(finishedWork.type)) {
+          //     didWarnSet.add(finishedWork.type);
+          //     console.error(
+          //       '%s.getSnapshotBeforeUpdate(): A snapshot value (or null) ' +
+          //         'must be returned. You have returned undefined.',
+          //       getComponentNameFromFiber(finishedWork),
+          //     );
+          //   }
+          // }
           // 将getSnapshotBeforeUpdate 存到 instance.__reactInternalSnapshotBeforeUpdate属性中
           instance.__reactInternalSnapshotBeforeUpdate = snapshot;
         }
         break;
       }
       case HostRoot: {
+        // 清空rootFiber挂载的内容，方便Mutation阶段渲染
         if (supportsMutation) {
           const root = finishedWork.stateNode;
           clearContainer(root.containerInfo);
@@ -1988,7 +2013,7 @@ export function commitMutationEffects(
 ) {
   // 设置第一个子元素
   nextEffect = firstChild;
-  // 开启循环 链表
+  // 开启循环 
   commitMutationEffects_begin(root, renderPriorityLevel);
 }
 
@@ -1996,11 +2021,17 @@ function commitMutationEffects_begin(
   root: FiberRoot,
   renderPriorityLevel: LanePriority,
 ) {
+  /* 
+    向下遍历直到 满足一下条件:
+      当前fiber不存在子fiber
+      当前fiber的子fiber不包含 Mutation子阶段对应的flags（即MutationMask）
+  */
   while (nextEffect !== null) {
     const fiber = nextEffect;
 
     // TODO: Should wrap this in flags check, too, as optimization
     const deletions = fiber.deletions;
+    // 如果当前节点需要删除
     if (deletions !== null) {
       for (let i = 0; i < deletions.length; i++) {
         const childToDelete = deletions[i];
@@ -2020,6 +2051,7 @@ function commitMutationEffects_begin(
           }
         } else {
           try {
+            // 删除DOM元素
             commitDeletion(root, childToDelete, fiber, renderPriorityLevel);
           } catch (error) {
             captureCommitPhaseError(childToDelete, fiber, error);
@@ -2029,7 +2061,7 @@ function commitMutationEffects_begin(
     }
 
     const child = fiber.child;
-    console.log('fiber.subtreeFlags & MutationMask===', fiber.subtreeFlags, MutationMask, (fiber.subtreeFlags & MutationMask))
+    
     if ((fiber.subtreeFlags & MutationMask) !== NoFlags && child !== null) {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
@@ -2062,6 +2094,7 @@ function commitMutationEffects_complete(
       resetCurrentDebugFiberInDEV();
     } else {
       try {
+        // 对当前fiber执行flags对应的操作，并重置对应操作的flags，如 flags = Placement，执行插入操作，并重置flags &= ~Placement
         commitMutationEffectsOnFiber(fiber, root, renderPriorityLevel);
       } catch (error) {
         captureCommitPhaseError(fiber, fiber.return, error);
@@ -2109,7 +2142,6 @@ function commitMutationEffectsOnFiber(
   // bitmap value, we remove the secondary effects from the effect tag and
   // switch on that value.
   const primaryFlags = flags & (Placement | Update | Hydrating);
-  console.log('finishedWork===', finishedWork, flags, flags & (Placement | Update | Hydrating))
   // 匹配相关操作 
   outer: switch (primaryFlags) {
     // 针对该节点以及子节点进行插入操作

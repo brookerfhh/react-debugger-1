@@ -56,11 +56,11 @@ import {
 } from './ReactHookEffectTags';
 import {
   // logCommitStarted,
-  logCommitStopped,
+  // logCommitStopped,
   // logLayoutEffectsStarted,
   // logLayoutEffectsStopped,
-  logPassiveEffectsStarted,
-  logPassiveEffectsStopped,
+  // logPassiveEffectsStarted,
+  // logPassiveEffectsStopped,
   // logRenderStarted,
   // logRenderStopped,
 } from './DebugTracing';
@@ -1557,6 +1557,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
       workLoopSync();
       break;
     } catch (thrownValue) {
+      // render阶段的错误捕获
       handleError(root, thrownValue);
     }
   } while (true);
@@ -2051,7 +2052,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     // The next phase is the mutation phase, where we mutate the host tree.
     // commit第二个子阶段
     //   mutation阶段，执行DOM操作
-    //   这个阶段负责 DOM 节点的渲染。在渲染过程中，会遍历 effectList，根据 flags（effectTag）的不同，执行不同的 DOM 操作。
+    //   这个阶段负责 DOM 节点的渲染。在渲染过程中，会遍历 effectList，根据 flags 的不同，执行不同的 DOM 操作。
     commitMutationEffects(root, renderPriorityLevel, finishedWork);
 
     if (shouldFireAfterActiveInstanceBlur) {
@@ -2209,11 +2210,11 @@ function commitRootImpl(root, renderPriorityLevel) {
   }
 
   if ((executionContext & LegacyUnbatchedContext) !== NoContext) {
-    if (__DEV__) {
-      if (enableDebugTracing) {
-        logCommitStopped();
-      }
-    }
+    // if (__DEV__) {
+    //   if (enableDebugTracing) {
+    //     logCommitStopped();
+    //   }
+    // }
 
     if (enableSchedulingProfiler) {
       markCommitStopped();
@@ -2229,11 +2230,11 @@ function commitRootImpl(root, renderPriorityLevel) {
   // If layout work was scheduled, flush it now.
   flushSyncCallbackQueue();
 
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logCommitStopped();
-    }
-  }
+  // if (__DEV__) {
+  //   if (enableDebugTracing) {
+  //     logCommitStopped();
+  //   }
+  // }
 
   if (enableSchedulingProfiler) {
     markCommitStopped();
@@ -2289,11 +2290,11 @@ function flushPassiveEffectsImpl() {
     'Cannot flush passive effects while already rendering.',
   );
 
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logPassiveEffectsStarted(lanes);
-    }
-  }
+  // if (__DEV__) {
+  //   if (enableDebugTracing) {
+  //     logPassiveEffectsStarted(lanes);
+  //   }
+  // }
 
   if (enableSchedulingProfiler) {
     markPassiveEffectsStarted(lanes);
@@ -2329,11 +2330,11 @@ function flushPassiveEffectsImpl() {
     isFlushingPassiveEffects = false;
   }
 
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logPassiveEffectsStopped();
-    }
-  }
+  // if (__DEV__) {
+  //   if (enableDebugTracing) {
+  //     logPassiveEffectsStopped();
+  //   }
+  // }
 
   if (enableSchedulingProfiler) {
     markPassiveEffectsStopped();
