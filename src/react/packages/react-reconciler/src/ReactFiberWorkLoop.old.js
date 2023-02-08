@@ -589,7 +589,7 @@ export function scheduleUpdateOnFiber(
       // 进入render 和 commit 阶段
       performSyncWorkOnRoot(root);
     } else {
-      // 进入异步render
+      // 注册调度任务, 经过`Scheduler`包的调度, 间接进行`fiber构造`
       ensureRootIsScheduled(root, eventTime);
       schedulePendingInteractions(root, lane);
       // 合成事件executionContext = 000000110 = 6
@@ -701,7 +701,11 @@ export function isInterleavedUpdate(fiber: Fiber, lane: Lane) {
 // of the existing task is the same as the priority of the next level that the
 // root has work on. This function is called on every update, and right before
 // exiting a task.
+/* 
+  确认 rootFiber 是否需要调度
+*/
 function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
+  // 前半部分: 判断是否需要注册新的调度
   const existingCallbackNode = root.callbackNode;
 
   // Check if any lanes are being starved by other work. If so, mark them as
@@ -752,6 +756,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     cancelCallback(existingCallbackNode);
   }
 
+  // 后半部分: 注册调度任务
   // Schedule a new callback.
   let newCallbackNode;
   if (newCallbackPriority === SyncLanePriority) {
