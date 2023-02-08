@@ -198,9 +198,9 @@ function flushWork(hasTimeRemaining, initialTime) {
 }
 
 function workLoop(hasTimeRemaining, initialTime) {
-  let currentTime = initialTime;
+  let currentTime = initialTime; // 保存当前时间，用于判断任务是否过期
   advanceTimers(currentTime);
-  currentTask = peek(taskQueue);
+  currentTask = peek(taskQueue); // 获取队列中的第一个任务
   while (
     currentTask !== null &&
     !(enableSchedulerDebugging && isSchedulerPaused)
@@ -210,6 +210,7 @@ function workLoop(hasTimeRemaining, initialTime) {
       (!hasTimeRemaining || shouldYieldToHost())
     ) {
       // This currentTask hasn't expired, and we've reached the deadline.
+      // 虽然currentTask还没有过期，但是执行时间超过了
       break;
     }
     const callback = currentTask.callback;
@@ -220,9 +221,11 @@ function workLoop(hasTimeRemaining, initialTime) {
       if (enableProfiling) {
         markTaskRun(currentTask, currentTime);
       }
+      // 执行回调
       const continuationCallback = callback(didUserCallbackTimeout);
       currentTime = getCurrentTime();
       if (typeof continuationCallback === 'function') {
+        // 产生了连续回调（如fiber树太大，出现了中断渲染），保留currentTask
         currentTask.callback = continuationCallback;
         if (enableProfiling) {
           markTaskYield(currentTask, currentTime);
@@ -232,20 +235,30 @@ function workLoop(hasTimeRemaining, initialTime) {
           markTaskCompleted(currentTask, currentTime);
           currentTask.isQueued = false;
         }
+        // 把currentTask 移除队列
         if (currentTask === peek(taskQueue)) {
           pop(taskQueue);
         }
       }
       advanceTimers(currentTime);
     } else {
+      // 如果任务被取消（这时currentTask.callback = null），将其移除队列
       pop(taskQueue);
     }
+    // 更新currentTask
     currentTask = peek(taskQueue);
   }
   // Return whether there's additional work
   if (currentTask !== null) {
+    // 如果currentTask不为空，说明是时间片的限制导致了任务中断
+    // return 一个 true告诉外部，此时任务还未执行完，还有任务，
     return true;
   } else {
+    /* 
+      如果currentTask为空，说明taskQueue队列中的任务已经都执行完了，然后从timerQueue中找任务，调用requestHostTimeout
+      去把task放到taskQueue中，到时会再次发起调度，但是这次，会先return false，告诉外部当前的taskQueue已经清空，
+      先停止执行任务，也就是终止任务调度
+    */
     const firstTimer = peek(timerQueue);
     if (firstTimer !== null) {
       requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
