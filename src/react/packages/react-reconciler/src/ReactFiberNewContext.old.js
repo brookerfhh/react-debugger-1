@@ -175,6 +175,7 @@ export function scheduleWorkOnParentPath(
   let node = parent;
   while (node !== null) {
     const alternate = node.alternate;
+    // 判断 renderLanes是否包含在 node.childLanes
     if (!isSubsetOfLanes(node.childLanes, renderLanes)) {
       node.childLanes = mergeLanes(node.childLanes, renderLanes);
       if (alternate !== null) {

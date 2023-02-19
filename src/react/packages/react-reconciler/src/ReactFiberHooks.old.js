@@ -712,7 +712,9 @@ function updateReducer<S, I, A>(
   initialArg: I,
   init?: I => S,
 ): [S, Dispatch<A>] {
+  // 获取 workInProgress hook
   const hook = updateWorkInProgressHook();
+  // wip 与 current 共享同一个queue
   const queue = hook.queue;
   invariant(
     queue !== null,
@@ -733,6 +735,7 @@ function updateReducer<S, I, A>(
     // We'll add them to the base queue.
     if (baseQueue !== null) {
       // Merge the pending queue and the base queue.
+      // 如果两个都有值,拼接pendingQueue 与 baseQueue
       const baseFirst = baseQueue.next;
       const pendingFirst = pendingQueue.next;
       baseQueue.next = pendingFirst;
@@ -748,10 +751,12 @@ function updateReducer<S, I, A>(
         );
       }
     }
+    // 拼接完成后的baseQueue 保存在 current.baseQueue中
     current.baseQueue = baseQueue = pendingQueue;
     queue.pending = null;
   }
 
+  // 完成拼接后,如果baseQueue,则遍历计算state
   if (baseQueue !== null) {
     // We have a queue to process.
     const first = baseQueue.next;
@@ -763,7 +768,9 @@ function updateReducer<S, I, A>(
     let update = first;
     do {
       const updateLane = update.lane;
+      // 判断 updateLane是否包含在renderLanes
       if (!isSubsetOfLanes(renderLanes, updateLane)) {
+        // 如果优先级小于此次更新的优先级，即优先级不足，则跳过这个update
         // Priority is insufficient. Skip this update. If this is the first
         // skipped update, the previous update/state is the new base
         // update/state.
@@ -774,6 +781,7 @@ function updateReducer<S, I, A>(
           eagerState: update.eagerState,
           next: (null: any),
         };
+        // 将被跳过的 update加入 newBaseQueue
         if (newBaseQueueLast === null) {
           newBaseQueueFirst = newBaseQueueLast = clone;
           newBaseState = newState;
@@ -783,6 +791,7 @@ function updateReducer<S, I, A>(
         // Update the remaining priority in the queue.
         // TODO: Don't need to accumulate this. Instead, we can remove
         // renderLanes from the original lanes.
+        // 将在beginWork中消费的lane重置
         currentlyRenderingFiber.lanes = mergeLanes(
           currentlyRenderingFiber.lanes,
           updateLane,
@@ -790,8 +799,9 @@ function updateReducer<S, I, A>(
         markSkippedUpdateLanes(updateLane);
       } else {
         // This update does have sufficient priority.
-
+        // 如果优先级足够
         if (newBaseQueueLast !== null) {
+          // 如果之前已经有update被跳过，当前的update也要加入newBaseQueueLast
           const clone: Update<S, A> = {
             // This update is going to be committed so we never want uncommit
             // it. Using NoLane works because 0 is a subset of all bitmasks, so
@@ -804,9 +814,10 @@ function updateReducer<S, I, A>(
           };
           newBaseQueueLast = newBaseQueueLast.next = clone;
         }
-
+        // 计算state
         // Process this update.
         if (update.eagerReducer === reducer) {
+          // 性能优化
           // If this update was processed eagerly, and its reducer matches the
           // current reducer, we can use the eagerly computed state.
           newState = ((update.eagerState: any): S);
@@ -817,7 +828,8 @@ function updateReducer<S, I, A>(
       }
       update = update.next;
     } while (update !== null && update !== first);
-
+    
+    // newBaseQueueLast 为null，代表 计算过程中没有update被跳过，此时memoizedState 与 newBaseState 一致
     if (newBaseQueueLast === null) {
       newBaseState = newState;
     } else {
@@ -829,9 +841,11 @@ function updateReducer<S, I, A>(
     if (!is(newState, hook.memoizedState)) {
       markWorkInProgressReceivedUpdate();
     }
-
+    // 计算出的state
     hook.memoizedState = newState;
+    // 下次更新的baseState
     hook.baseState = newBaseState;
+    // 如果计算过程中有update被跳过，将未参与计算的update保存在baseQueue中，即下次更新的baseQueue
     hook.baseQueue = newBaseQueueLast;
 
     queue.lastRenderedState = newState;
@@ -1914,6 +1928,7 @@ function dispatchAction<S, A>(
   }
 
   const eventTime = requestEventTime();
+  // 获取lane
   const lane = requestUpdateLane(fiber);
 
   const update: Update<S, A> = {
@@ -1929,6 +1944,7 @@ function dispatchAction<S, A>(
     fiber === currentlyRenderingFiber ||
     (alternate !== null && alternate === currentlyRenderingFiber)
   ) {
+    // render阶段触发的更新
     // This is a render phase update. Stash it in a lazily-created map of
     // queue -> linked list of updates. After this render pass, we'll restart
     // and apply the stashed updates on top of the work-in-progress hook.
@@ -1968,13 +1984,16 @@ function dispatchAction<S, A>(
       queue.pending = update;
     }
 
+    // 判断 当前fiber是否存在待执行更新，如果不存在，则尝试基于 本次更新对应的action 计算eagerStae
     if (
       fiber.lanes === NoLanes &&
       (alternate === null || alternate.lanes === NoLanes)
     ) {
+      // 当前队列为空，可以在进入render阶段渲染之前很快地计算出下一个状态，如果新的状态 和 当前状态一致，则不会进入schedule阶段
       // The queue is currently empty, which means we can eagerly compute the
       // next state before entering the render phase. If the new state is the
       // same as the current state, we may be able to bail out entirely.
+      // 上次计算使用的reducer
       const lastRenderedReducer = queue.lastRenderedReducer;
       if (lastRenderedReducer !== null) {
         let prevDispatcher;
@@ -1983,7 +2002,9 @@ function dispatchAction<S, A>(
           ReactCurrentDispatcher.current = InvalidNestedHooksDispatcherOnUpdateInDEV;
         }
         try {
+          // 即memoizedState
           const currentState: S = (queue.lastRenderedState: any);
+          // 基于action提前计算state
           const eagerState = lastRenderedReducer(currentState, action);
           // Stash the eagerly computed state, and the reducer used to compute
           // it, on the update object. If the reducer hasn't changed by the
@@ -1991,6 +2012,7 @@ function dispatchAction<S, A>(
           // without calling the reducer again.
           update.eagerReducer = lastRenderedReducer;
           update.eagerState = eagerState;
+          // 如果新的状态 和 当前状态一致，则命中bail out策略，不需要往下执行，即不执行scheduleUpdateOnFiber开启新的调度
           if (is(eagerState, currentState)) {
             // Fast path. We can bail out without scheduling React to re-render.
             // It's still possible that we'll need to rebase this update later,
@@ -2014,6 +2036,7 @@ function dispatchAction<S, A>(
         warnIfNotCurrentlyActingUpdatesInDev(fiber);
       }
     }
+    // 开始调度
     const root = scheduleUpdateOnFiber(fiber, lane, eventTime);
 
     if (isTransitionLane(lane) && root !== null) {
