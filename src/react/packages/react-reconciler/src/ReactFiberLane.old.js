@@ -328,38 +328,54 @@ export function lanePriorityToSchedulerPriority(
   }
 }
 
+/* 
+  主要逻辑：
+    处理root.pendingLanes中的高优先级lane 组成基础的lanes
+    处理Suspense相关情况
+    处理纠缠的lane相关情况
+    最终workInProgressRootRenderLanes 为 两类lanes的并集
+    workInProgressRootRenderLanes = 基础的lanes | 额外情况附加的lanes
+*/
 export function getNextLanes(root: FiberRoot, wipLanes: Lanes): Lanes {
   // Early bailout if there's no pending work left.
   const pendingLanes = root.pendingLanes;
   if (pendingLanes === NoLanes) {
+    // 没有 未完成的 lane
     return_highestLanePriority = NoLanePriority;
     return NoLanes;
   }
 
   let nextLanes = NoLanes;
   let nextLanePriority = NoLanePriority;
-
+  // 过期的lane
   const expiredLanes = root.expiredLanes;
+  // 由于请求导致Suspense挂起,编辑的lanes
   const suspendedLanes = root.suspendedLanes;
+  // Suspense请求完毕后,解锁之前挂起的流程,标记的lanes
   const pingedLanes = root.pingedLanes;
 
   // Check if any work has expired.
   if (expiredLanes !== NoLanes) {
     // TODO: Should entangle with SyncLane
+    // 如果有过期的lane，设置为同步优先级
     nextLanes = expiredLanes;
     nextLanePriority = return_highestLanePriority = SyncLanePriority;
   } else {
     // Do not work on any idle work until all the non-idle work has finished,
     // even if the work is suspended.
+    // 非空闲的lane
     const nonIdlePendingLanes = pendingLanes & NonIdleLanes;
     if (nonIdlePendingLanes !== NoLanes) {
+      // 排除suspendedLanes
       const nonIdleUnblockedLanes = nonIdlePendingLanes & ~suspendedLanes;
       if (nonIdleUnblockedLanes !== NoLanes) {
+        // 获取 非空闲的lanes 中优先级最高的lanes
         nextLanes = getHighestPriorityLanes(nonIdleUnblockedLanes);
         nextLanePriority = return_highestLanePriority;
       } else {
         const nonIdlePingedLanes = nonIdlePendingLanes & pingedLanes;
         if (nonIdlePingedLanes !== NoLanes) {
+          // 获取 被解锁的lanes 中优先级最高的lanes
           nextLanes = getHighestPriorityLanes(nonIdlePingedLanes);
           nextLanePriority = return_highestLanePriority;
         }
@@ -395,6 +411,7 @@ export function getNextLanes(root: FiberRoot, wipLanes: Lanes): Lanes {
     // bother waiting until the root is complete.
     (wipLanes & suspendedLanes) === NoLanes
   ) {
+    // 省略Suspense挂起的相关情况
     getHighestPriorityLanes(wipLanes);
     const wipLanePriority = return_highestLanePriority;
     if (
@@ -434,6 +451,7 @@ export function getNextLanes(root: FiberRoot, wipLanes: Lanes): Lanes {
   // For those exceptions where entanglement is semantically important, like
   // useMutableSource, we should ensure that there is no partial work at the
   // time we apply the entanglement.
+  // 处理纠缠的lane
   const entangledLanes = root.entangledLanes;
   if (entangledLanes !== NoLanes) {
     const entanglements = root.entanglements;
@@ -522,6 +540,7 @@ export function markStarvedLanesAsExpired(
 
     const expirationTime = expirationTimes[index];
     if (expirationTime === NoTimestamp) {
+      // 为 未设置过期时间的lane 设置 过期时间
       // Found a pending lane with no expiration time. If it's not suspended, or
       // if it's pinged, assume it's CPU-bound. Compute a new expiration time
       // using the current time.
@@ -534,6 +553,7 @@ export function markStarvedLanesAsExpired(
       }
     } else if (expirationTime <= currentTime) {
       // This lane expired
+      // 如果lane 已经过期，在root.expiredLanes 记录过期的lane
       root.expiredLanes |= lane;
     }
 
@@ -652,7 +672,7 @@ function laneToIndex(lane: Lane) {
 export function includesSomeLane(a: Lanes | Lane, b: Lanes | Lane) {
   return (a & b) !== NoLanes;
 }
-
+// 判断 subset是否包含在set里
 export function isSubsetOfLanes(set: Lanes, subset: Lanes | Lane) {
   return (set & subset) === subset;
 }
@@ -772,14 +792,21 @@ export function markRootMutableRead(root: FiberRoot, updateLane: Lane) {
 }
 
 export function markRootFinished(root: FiberRoot, remainingLanes: Lanes) {
+  /* 
+    remainingLane 是rootFiber.lanes 和 rootFiber.childLanes的并集，即 本次更新后rootFiber及其子孙中待执行的lanes,即下次更新剩余的lanes
+    noLongerPendingLanes 为从所有待执行lanes 中移除 本地更新后待执行的lanes，即代表 pendingLanes中在本次更新中的lanes
+  */
   const noLongerPendingLanes = root.pendingLanes & ~remainingLanes;
 
+  // 赋值为 下次更新的lanes
   root.pendingLanes = remainingLanes;
 
   // Let's try everything again
+  // 重置
   root.suspendedLanes = 0;
   root.pingedLanes = 0;
 
+  // 消费掉 要更新的lanes
   root.expiredLanes &= remainingLanes;
   root.mutableReadLanes &= remainingLanes;
 
@@ -799,6 +826,7 @@ export function markRootFinished(root: FiberRoot, remainingLanes: Lanes) {
   const expirationTimes = root.expirationTimes;
 
   // Clear the lanes that no longer have pending work
+  // 重置过去时间 及 纠缠的lanes
   let lanes = noLongerPendingLanes;
   while (lanes > 0) {
     const index = pickArbitraryLaneIndex(lanes);

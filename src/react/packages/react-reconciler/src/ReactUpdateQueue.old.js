@@ -251,9 +251,10 @@ export function enqueueUpdate<State>(
     // 如果没有待执行的任务，自身形成环状链表，即update => update
     if (pending === null) {
       // This is the first update. Create a circular list.
+      // 当前fiber不存在 未被消费的update，则新update 会与自身形成环状链表
       update.next = update;
     } else {
-      // 如果有待执行任务，插入链表末尾
+      // 当前fiber存在 未被消费的update，则将新的update插入该链表末尾
       update.next = pending.next;
       pending.next = update;
     }
@@ -540,6 +541,7 @@ export function processUpdateQueue<State>(
     do {
       const updateLane = update.lane;
       const updateEventTime = update.eventTime;
+      // 判断 updateLane是否包含在renderLanes
       if (!isSubsetOfLanes(renderLanes, updateLane)) {
         // Priority is insufficient. Skip this update. If this is the first
         // skipped update, the previous update/state is the new base

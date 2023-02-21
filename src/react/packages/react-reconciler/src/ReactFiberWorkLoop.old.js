@@ -386,11 +386,13 @@ export function getCurrentTime() {
   return now();
 }
 
+// 决定fiber的优先级，即获取fiber的lane
 export function requestUpdateLane(fiber: Fiber): Lane {
   // Special cases
   const mode = fiber.mode;
   console.info('ConcurrentMode==', fiber.mode, BlockingMode, ConcurrentMode)
   if ((mode & BlockingMode) === NoMode) {
+    // 未开启非并发模式，都是同步优先级
     return (SyncLane: Lane);
   } else if ((mode & ConcurrentMode) === NoMode) {
     console.info('mode==', ConcurrentMode)
@@ -411,6 +413,11 @@ export function requestUpdateLane(fiber: Fiber): Lane {
     // This behavior is only a fallback. The flag only exists until we can roll
     // out the setState warning, since existing code might accidentally rely on
     // the current behavior.
+    // 
+    /* 
+      executionContext 处于 RenderContext上下文中，即 render阶段产生的update，返回render阶段进行中的优先级
+      workInProgressRootRenderLanes 代表 当前应用render阶段需要处理的lanes
+    */
     return pickArbitraryLane(workInProgressRootRenderLanes);
   }
 
@@ -637,28 +644,34 @@ export function scheduleUpdateOnFiber(
 // work without treating it as a typical update that originates from an event;
 // e.g. retrying a Suspense boundary isn't an update, but it does schedule work
 // on a fiber.
+/* 
+  从当前fiber向上遍历 每次遍历,每个祖先fiber的childLanes都会附加 源fiber通过requestUpdate选定的lane, 
+  最后遍历到rootFiber,最终返回rootFiber的stateNode. 这一过程可以称为lanes冒泡
+*/
 function markUpdateLaneFromFiberToRoot(
   sourceFiber: Fiber,
   lane: Lane,
 ): FiberRoot | null {
   // Update the source fiber's lanes
+  // sourceFiber为 发起更新的fiber,即源fiber
   sourceFiber.lanes = mergeLanes(sourceFiber.lanes, lane);
   let alternate = sourceFiber.alternate;
   if (alternate !== null) {
     alternate.lanes = mergeLanes(alternate.lanes, lane);
   }
-  if (__DEV__) {
-    if (
-      alternate === null &&
-      (sourceFiber.flags & (Placement | Hydrating)) !== NoFlags
-    ) {
-      warnAboutUpdateOnNotYetMountedFiberInDEV(sourceFiber);
-    }
-  }
+  // if (__DEV__) {
+  //   if (
+  //     alternate === null &&
+  //     (sourceFiber.flags & (Placement | Hydrating)) !== NoFlags
+  //   ) {
+  //     warnAboutUpdateOnNotYetMountedFiberInDEV(sourceFiber);
+  //   }
+  // }
   // Walk the parent path to the root and update the child lanes.
   let node = sourceFiber;
   let parent = sourceFiber.return;
   while (parent !== null) {
+    // 选定的lane附加在每一级符fiber的childLanes中
     parent.childLanes = mergeLanes(parent.childLanes, lane);
     alternate = parent.alternate;
     if (alternate !== null) {
@@ -711,9 +724,11 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
 
   // Check if any lanes are being starved by other work. If so, mark them as
   // expired so we know to work on those next.
+  // 根据 交互发生的时间 为 更新对应的lane 设置过期时间
   markStarvedLanesAsExpired(root, currentTime);
 
   // Determine the next lanes to work on, and their priority.
+  // 决定workInProgressRootRenderLanes
   const nextLanes = getNextLanes(
     root,
     root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
@@ -763,10 +778,12 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   if (newCallbackPriority === SyncLanePriority) {
     // Special case: Sync React callbacks are scheduled on a special
     // internal queue
-    // 如果任务已经过期，需要同步执行render阶段
+    // 如果有SyncLane 进入 同步调度逻辑
+    // scheduleSyncCallback 将 callback 推入 syncQueue 队列
     scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root));
     newCallbackNode = null;
   } else if (newCallbackPriority === SyncBatchedLanePriority) {
+    
     newCallbackNode = scheduleCallback(
       ImmediateSchedulerPriority,
       performSyncWorkOnRoot.bind(null, root),
@@ -937,6 +954,7 @@ function finishConcurrentRender(root, exitStatus, lanes) {
             break;
           }
           const suspendedLanes = root.suspendedLanes;
+          // 判断 lanes是否包含在suspendedLanes
           if (!isSubsetOfLanes(suspendedLanes, lanes)) {
             // We should prefer to render the fallback of at the last
             // suspended level. Ping the last suspended level to try
@@ -1186,8 +1204,9 @@ export function batchedUpdates<A, R>(fn: A => R, a: A): R {
   try {
     return fn(a);
   } finally {
+    // 重置上下文
     executionContext = prevExecutionContext;
-    // 如果是setTimeout中 就没有执行上下文，就会执行下面的操作
+    // 如果是setTimeout中,在setTimeout回调函数执行时，早已跳出了batchedUpdates调用栈，也就没有执行上下文，所以回调函数触发的更新不会自动批量更新
     if (executionContext === NoContext) {
       // Flush the immediate callbacks that were scheduled during this batch
       resetRenderTimer();
@@ -1933,7 +1952,9 @@ function commitRootImpl(root, renderPriorityLevel) {
 
   // Update the first and last pending times on this root. The new first
   // pending time is whatever is left on the root fiber.
+  // rootFiber及其子孙fiber中所有待执行lane的集合
   let remainingLanes = mergeLanes(finishedWork.lanes, finishedWork.childLanes);
+  // 重置lanes的相关数据
   markRootFinished(root, remainingLanes);
 
   // Clear already finished discrete updates in case that a later call of
