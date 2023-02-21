@@ -74,8 +74,8 @@ import {
   requestUpdateLane,
   requestEventTime,
   warnIfNotCurrentlyActingEffectsInDEV,
-  warnIfNotCurrentlyActingUpdatesInDev,
-  warnIfNotScopedWithMatchingAct,
+  // warnIfNotCurrentlyActingUpdatesInDev,
+  // warnIfNotScopedWithMatchingAct,
   markSkippedUpdateLanes,
   isInterleavedUpdate,
 } from './ReactFiberWorkLoop.old';
@@ -1915,7 +1915,7 @@ function dispatchAction<S, A>(
 
   const eventTime = requestEventTime();
   const lane = requestUpdateLane(fiber);
-
+  console.info('update==', fiber)
   const update: Update<S, A> = {
     lane,
     action,
@@ -2007,13 +2007,13 @@ function dispatchAction<S, A>(
         }
       }
     }
-    if (__DEV__) {
-      // $FlowExpectedError - jest isn't a global, and isn't recognized outside of tests
-      if ('undefined' !== typeof jest) {
-        warnIfNotScopedWithMatchingAct(fiber);
-        warnIfNotCurrentlyActingUpdatesInDev(fiber);
-      }
-    }
+    // if (__DEV__) {
+    //   // $FlowExpectedError - jest isn't a global, and isn't recognized outside of tests
+    //   if ('undefined' !== typeof jest) {
+    //     warnIfNotScopedWithMatchingAct(fiber);
+    //     warnIfNotCurrentlyActingUpdatesInDev(fiber);
+    //   }
+    // }
     const root = scheduleUpdateOnFiber(fiber, lane, eventTime);
 
     if (isTransitionLane(lane) && root !== null) {

@@ -1010,9 +1010,11 @@ function resumeMountClassInstance(
     );
     newState = workInProgress.memoizedState;
   }
-
+  
   const shouldUpdate =
+  // 如果update.tag标记为 ForceUpdate， checkHasForceUpdateAfterProcessing()直接返回true
     checkHasForceUpdateAfterProcessing() ||
+    // 如果是PureComponent 做浅比较
     checkShouldComponentUpdate(
       workInProgress,
       ctor,

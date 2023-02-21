@@ -345,6 +345,7 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
   }
 
   var timeout;
+  // 根据优先级 赋值超时时间
   switch (priorityLevel) {
     case ImmediatePriority:
       timeout = IMMEDIATE_PRIORITY_TIMEOUT;
@@ -366,6 +367,7 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
 
   var expirationTime = startTime + timeout;
 
+  // 初始化任务
   var newTask = {
     id: taskIdCounter++,
     callback,
@@ -377,11 +379,13 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
   if (enableProfiling) {
     newTask.isQueued = false;
   }
-
+  // 如果开始时间 大于 当前时间，意味着改任务还未开始
   if (startTime > currentTime) {
     // This is a delayed task.
     newTask.sortIndex = startTime;
     push(timerQueue, newTask);
+
+    // 如果 非延时任务已清空，且新的任务为最高优先级的延时任务
     if (peek(taskQueue) === null && newTask === peek(timerQueue)) {
       // All tasks are delayed, and this is the task with the earliest delay.
       if (isHostTimeoutScheduled) {
@@ -527,13 +531,18 @@ function forceFrameRate(fps) {
     yieldInterval = 5;
   }
 }
-
+// 执行工作直到截止时间
 const performWorkUntilDeadline = () => {
   if (scheduledHostCallback !== null) {
+    // 获取当前时间
     const currentTime = getCurrentTime();
     // Yield after `yieldInterval` ms, regardless of where we are in the vsync
     // cycle. This means there's always time remaining at the beginning of
     // the message event.
+    /* 
+      计算需要让出浏览器执行权的时间
+      yieldInterval为5ms，意为当前时间开始有5ms时间片归react执行任务用
+    */
     deadline = currentTime + yieldInterval;
     const hasTimeRemaining = true;
 
@@ -545,13 +554,19 @@ const performWorkUntilDeadline = () => {
     // `hasMoreWork` will remain true, and we'll continue the work loop.
     let hasMoreWork = true;
     try {
+      /* 
+        调用调度函数，scheduledHostCallback是注册好的回调，返回下一个任务或者空
+
+      */
       hasMoreWork = scheduledHostCallback(hasTimeRemaining, currentTime);
     } finally {
       if (hasMoreWork) {
         // If there's more work, schedule the next message event at the end
         // of the preceding one.
+        // 如果有任务，继续注册下次宏任务的调度
         schedulePerformWorkUntilDeadline();
       } else {
+        // 重置
         isMessageLoopRunning = false;
         scheduledHostCallback = null;
       }
@@ -561,6 +576,7 @@ const performWorkUntilDeadline = () => {
   }
   // Yielding to the browser will give it a chance to paint, so we can
   // reset this.
+  // 让出执行权给浏览器
   needsPaint = false;
 };
 
@@ -583,6 +599,7 @@ if (typeof setImmediate === 'function') {
 } else {
   const channel = new MessageChannel();
   const port = channel.port2;
+  // port1 接收调度信号, 来执行 performWorkUntilDeadline(受)
   channel.port1.onmessage = performWorkUntilDeadline;
   schedulePerformWorkUntilDeadline = () => {
     port.postMessage(null);
@@ -593,6 +610,7 @@ function requestHostCallback(callback) {
   scheduledHostCallback = callback;
   if (!isMessageLoopRunning) {
     isMessageLoopRunning = true;
+    // postMessage, 告诉 port1 来执行 performWorkUntilDeadline 方法
     schedulePerformWorkUntilDeadline();
   }
 }

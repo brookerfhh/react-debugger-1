@@ -162,7 +162,7 @@ if (__DEV__) {
     currentlyProcessingQueue = null;
   };
 }
-
+// 创建updateQueue，然后将updateQueue挂载到fiber节点上
 export function initializeUpdateQueue<State>(fiber: Fiber): void {
   const queue: UpdateQueue<State> = {
     baseState: fiber.memoizedState,
@@ -248,10 +248,12 @@ export function enqueueUpdate<State>(
   } else {
     // pending为待执行的任务
     const pending = sharedQueue.pending;
+    // 如果没有待执行的任务，自身形成环状链表，即update => update
     if (pending === null) {
       // This is the first update. Create a circular list.
       update.next = update;
     } else {
+      // 如果有待执行任务，插入链表末尾
       update.next = pending.next;
       pending.next = update;
     }

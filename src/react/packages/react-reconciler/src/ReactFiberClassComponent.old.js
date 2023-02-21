@@ -202,10 +202,12 @@ export function applyDerivedStateFromProps(
 const classComponentUpdater = {
   isMounted,
   enqueueSetState(inst, payload, callback) {
+    // 获取fiber实例
     const fiber = getInstance(inst);
     const eventTime = requestEventTime();
+    // 获取优先级
     const lane = requestUpdateLane(fiber);
-
+    // 创建update
     const update = createUpdate(eventTime, lane);
     update.payload = payload;
     if (callback !== undefined && callback !== null) {
@@ -214,8 +216,9 @@ const classComponentUpdater = {
       }
       update.callback = callback;
     }
-
+    //update加入updateQueue
     enqueueUpdate(fiber, update, lane);
+    // 开启调度
     const root = scheduleUpdateOnFiber(fiber, lane, eventTime);
     if (root !== null) {
       entangleTransitions(root, fiber, lane);
@@ -275,6 +278,7 @@ const classComponentUpdater = {
     const lane = requestUpdateLane(fiber);
 
     const update = createUpdate(eventTime, lane);
+    // 标记tag为 ForceUpdate
     update.tag = ForceUpdate;
 
     if (callback !== undefined && callback !== null) {
@@ -836,7 +840,7 @@ function mountClassInstance(
   instance.props = newProps;
   instance.state = workInProgress.memoizedState;
   instance.refs = emptyRefsObject;
-
+  // 创建updateQueue，然后将updateQueue挂载到fiber节点上
   initializeUpdateQueue(workInProgress);
 
   const contextType = ctor.contextType;

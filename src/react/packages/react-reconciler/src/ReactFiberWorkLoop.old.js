@@ -389,9 +389,11 @@ export function getCurrentTime() {
 export function requestUpdateLane(fiber: Fiber): Lane {
   // Special cases
   const mode = fiber.mode;
+  console.info('ConcurrentMode==', fiber.mode, BlockingMode, ConcurrentMode)
   if ((mode & BlockingMode) === NoMode) {
     return (SyncLane: Lane);
   } else if ((mode & ConcurrentMode) === NoMode) {
+    console.info('mode==', ConcurrentMode)
     return getCurrentUpdateLanePriority() === SyncLanePriority
       ? (SyncLane: Lane)
       : (SyncBatchedLane: Lane);
@@ -569,7 +571,6 @@ export function scheduleUpdateOnFiber(
   }
   // 同步任务
   if (lane === SyncLane) {
-    // legacy模式 走这里
     if (
       // Check if we're inside unbatchedUpdates
       // 检测是否处于非批量更新模式, 判断是否合成事件
@@ -762,6 +763,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   if (newCallbackPriority === SyncLanePriority) {
     // Special case: Sync React callbacks are scheduled on a special
     // internal queue
+    // 如果任务已经过期，需要同步执行render阶段
     scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root));
     newCallbackNode = null;
   } else if (newCallbackPriority === SyncBatchedLanePriority) {
@@ -776,6 +778,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     scheduleMicrotask(performSyncWorkOnRoot.bind(null, root));
     newCallbackNode = null;
   } else {
+    // 转成schedule的优先级
     const schedulerPriorityLevel = lanePriorityToSchedulerPriority(
       newCallbackPriority,
     );
