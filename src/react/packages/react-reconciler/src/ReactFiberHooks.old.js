@@ -1245,11 +1245,11 @@ function updateMutableSource<Source, Snapshot>(
   const hook = updateWorkInProgressHook();
   return useMutableSource(hook, source, getSnapshot, subscribe);
 }
-
+// mount 阶段 useState 调用mountState
 function mountState<S>(
   initialState: (() => S) | S,
 ): [S, Dispatch<BasicStateAction<S>>] {
-  const hook = mountWorkInProgressHook();
+  const hook = mountWorkInProgressHook(); //创建当前hook
   if (typeof initialState === 'function') {
     // $FlowFixMe: Flow doesn't like mixed types
     initialState = initialState();
@@ -1410,6 +1410,7 @@ function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
   const hook = mountWorkInProgressHook();
   const nextDeps = deps === undefined ? null : deps;
   currentlyRenderingFiber.flags |= fiberFlags;
+  //useEffect 的 memoizedState = effects环状链表
   hook.memoizedState = pushEffect(
     HookHasEffect | hookFlags,
     create,
@@ -1428,6 +1429,7 @@ function updateEffectImpl(fiberFlags, hookFlags, create, deps): void {
     destroy = prevEffect.destroy;
     if (nextDeps !== null) {
       const prevDeps = prevEffect.deps;
+      // 浅比较 deps
       if (areHookInputsEqual(nextDeps, prevDeps)) {
         hook.memoizedState = pushEffect(hookFlags, create, destroy, nextDeps);
         return;

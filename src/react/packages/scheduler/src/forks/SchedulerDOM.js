@@ -161,6 +161,7 @@ function flushWork(hasTimeRemaining, initialTime) {
   }
 
   // We'll need a host callback the next time work is scheduled.
+  // 1. 做好全局标记, 表示现在已经进入调度阶段
   isHostCallbackScheduled = false;
   if (isHostTimeoutScheduled) {
     // We scheduled a timeout but it's no longer needed. Cancel it.
@@ -205,12 +206,13 @@ function workLoop(hasTimeRemaining, initialTime) {
     currentTask !== null &&
     !(enableSchedulerDebugging && isSchedulerPaused)
   ) {
+    // 每一次具体执行currentTask.callback之前都要进行超时检测, 
     if (
       currentTask.expirationTime > currentTime &&
       (!hasTimeRemaining || shouldYieldToHost())
     ) {
       // This currentTask hasn't expired, and we've reached the deadline.
-      // 虽然currentTask还没有过期，但是执行时间超过了
+      // 虽然currentTask没有过期, 但是执行时间超过了限制(毕竟只有5ms, shouldYieldToHost()返回true). 停止继续执行, 让出主线程
       break;
     }
     const callback = currentTask.callback;
@@ -224,6 +226,7 @@ function workLoop(hasTimeRemaining, initialTime) {
       // 执行回调
       const continuationCallback = callback(didUserCallbackTimeout);
       currentTime = getCurrentTime();
+      // 回调完成, 判断是否还有连续(派生)回调
       if (typeof continuationCallback === 'function') {
         // 产生了连续回调（如fiber树太大，出现了中断渲染），保留currentTask
         currentTask.callback = continuationCallback;
@@ -331,7 +334,7 @@ function unstable_wrapCallback(callback) {
 
 function unstable_scheduleCallback(priorityLevel, callback, options) {
   var currentTime = getCurrentTime();
-
+  //  v17.0.2中调用unstable_scheduleCallback都没有传options，所以startTime 都等于 currentTime
   var startTime;
   if (typeof options === 'object' && options !== null) {
     var delay = options.delay;
@@ -381,6 +384,7 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
   }
   // 如果开始时间 大于 当前时间，意味着改任务还未开始
   if (startTime > currentTime) {
+    // v17.0.2中调用unstable_scheduleCallback都没有传options，所以startTime 都等于 currentTime，不会走以下逻辑
     // This is a delayed task.
     newTask.sortIndex = startTime;
     push(timerQueue, newTask);
@@ -465,7 +469,11 @@ let deadline = 0;
 // TODO: Adjust this based on priority?
 const maxYieldInterval = 300;
 let needsPaint = false;
-
+/*
+  判断是否让出主线程
+  主要逻辑：
+ 
+ */
 function shouldYieldToHost() {
   if (
     enableIsInputPending &&
@@ -514,7 +522,7 @@ function requestPaint() {
 
   // Since we yield every frame regardless, `requestPaint` has no effect.
 }
-
+// 设置切片的时间限制，即yieldInterval
 function forceFrameRate(fps) {
   if (fps < 0 || fps > 125) {
     // Using console['error'] to evade Babel and ESLint
@@ -556,7 +564,6 @@ const performWorkUntilDeadline = () => {
     try {
       /* 
         调用调度函数，scheduledHostCallback是注册好的回调，返回下一个任务或者空
-
       */
       hasMoreWork = scheduledHostCallback(hasTimeRemaining, currentTime);
     } finally {
@@ -599,8 +606,9 @@ if (typeof setImmediate === 'function') {
 } else {
   const channel = new MessageChannel();
   const port = channel.port2;
-  // port1 接收调度信号, 来执行 performWorkUntilDeadline(受)
+  // port1 接收调度信号, 来执行 performWorkUntilDeadline
   channel.port1.onmessage = performWorkUntilDeadline;
+  // port2 发送要调度的消息
   schedulePerformWorkUntilDeadline = () => {
     port.postMessage(null);
   };

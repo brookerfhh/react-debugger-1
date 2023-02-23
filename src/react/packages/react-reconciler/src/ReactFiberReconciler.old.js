@@ -289,7 +289,7 @@ export function updateContainer(
       warnIfNotScopedWithMatchingAct(current);
     }
   }
-  // 获取赛道  优先级
+  // 获取 优先级
   const lane = requestUpdateLane(current);
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);

@@ -487,17 +487,18 @@ export function processUpdateQueue<State>(
   let lastBaseUpdate = queue.lastBaseUpdate;
 
   // Check if there are pending updates. If so, transfer them to the base queue.
-  let pendingQueue = queue.shared.pending;
+  let pendingQueue = queue.shared.pending; //未计算的pendingQueue
   if (pendingQueue !== null) {
     queue.shared.pending = null;
 
     // The pending queue is circular. Disconnect the pointer between first
     // and last so that it's non-circular.
-    const lastPendingUpdate = pendingQueue;
-    const firstPendingUpdate = lastPendingUpdate.next;
-    lastPendingUpdate.next = null;
+    const lastPendingUpdate = pendingQueue; // 未计算的ppendingQueue的最后一个update
+    const firstPendingUpdate = lastPendingUpdate.next; // 未计算的pendingQueue的第一个update
+    lastPendingUpdate.next = null; // 剪开环状链表
     // Append pending updates to base queue
     if (lastBaseUpdate === null) {
+      // 将pendingQueue加入到updateQueue
       firstBaseUpdate = firstPendingUpdate;
     } else {
       lastBaseUpdate.next = firstPendingUpdate;
