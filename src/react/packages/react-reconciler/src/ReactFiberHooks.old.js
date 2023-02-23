@@ -1984,7 +1984,8 @@ function dispatchAction<S, A>(
       queue.pending = update;
     }
 
-    // 判断 当前fiber是否存在待执行更新，如果不存在，则尝试基于 本次更新对应的action 计算eagerStae
+    // 判断 当前fiber 与其对应的workInProgress fiber 是否存在待执行更新，即current fiber 与 wip fiber都不存在待更新，则尝试基于 本次更新对应的action 计算eagerState
+    // 
     if (
       fiber.lanes === NoLanes &&
       (alternate === null || alternate.lanes === NoLanes)

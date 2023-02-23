@@ -497,6 +497,7 @@ function updateMemoComponent(
     // Default to shallow comparison
     let compare = Component.compare;
     compare = compare !== null ? compare : shallowEqual;
+    // 浅比较是否命中bailout策略
     if (compare(prevProps, nextProps) && current.ref === workInProgress.ref) {
       return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
     }
@@ -562,6 +563,7 @@ function updateSimpleMemoComponent(
     ) {
       didReceiveUpdate = false;
       if (!includesSomeLane(renderLanes, updateLanes)) {
+        // 当前fiber不存在更新
         // The pending lanes were cleared at the beginning of beginWork. We're
         // about to bail out, but there might be other lanes that weren't
         // included in the current render. Usually, the priority level of the
@@ -935,6 +937,7 @@ function updateFunctionComponent(
     }
     setIsRendering(false);
   } else {
+    // renderWithHooks 执行时会标记 didReceiveUpdate 
     nextChildren = renderWithHooks(
       current,
       workInProgress,
@@ -946,6 +949,7 @@ function updateFunctionComponent(
   }
 
   if (current !== null && !didReceiveUpdate) {
+    // 命中 bailout 策略，会从current.lanes 移除 renderLanes
     bailoutHooks(current, workInProgress, renderLanes);
     return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
   }
@@ -3157,6 +3161,8 @@ function bailoutOnAlreadyFinishedWork(
 
   // Check if the children have any pending work.
   if (!includesSomeLane(renderLanes, workInProgress.childLanes)) {
+    // 整棵子树都命中bailout策略
+    // 通过workInProgress.childLanes可以快速排查 整棵子树是否存在更新
     // The children don't have any work either. We can skip them.
     // TODO: Once we add back resuming, we should check if the children are
     // a work-in-progress set. If so, we need to transfer their effects.
@@ -3172,7 +3178,7 @@ function bailoutOnAlreadyFinishedWork(
       return null;
     }
   }
-
+  // 只有子fiber命中bailout策略
   // This fiber doesn't have work, but its subtree does. Clone the child
   // fibers and continue.
   cloneChildFibers(current, workInProgress);
