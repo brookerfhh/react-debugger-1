@@ -498,7 +498,7 @@ function commitBeforeMutationEffectsDeletion(deletion: Fiber) {
     beforeActiveInstanceBlur(deletion);
   }
 }
-
+// 遍历effect链表一次执行effect.destroy方法
 function commitHookEffectListUnmount(
   flags: HookFlags,
   finishedWork: Fiber,
@@ -509,6 +509,7 @@ function commitHookEffectListUnmount(
   if (lastEffect !== null) {
     const firstEffect = lastEffect.next;
     let effect = firstEffect;
+    // 遍历effect链表
     do {
       if ((effect.tag & flags) === flags) {
         // Unmount
@@ -522,7 +523,7 @@ function commitHookEffectListUnmount(
     } while (effect !== firstEffect);
   }
 }
-
+// 遍历effect链表一次执行effect.create方法
 function commitHookEffectListMount(tag: number, finishedWork: Fiber) {
   // 获取任务队列
   const updateQueue: FunctionComponentUpdateQueue | null = (finishedWork.updateQueue: any);

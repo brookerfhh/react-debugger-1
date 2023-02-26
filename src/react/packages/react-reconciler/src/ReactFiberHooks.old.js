@@ -1284,7 +1284,7 @@ function rerenderState<S>(
 ): [S, Dispatch<BasicStateAction<S>>] {
   return rerenderReducer(basicStateReducer, (initialState: any));
 }
-
+// 创建effect并形成单向链表
 function pushEffect(tag, create, destroy, deps) {
   const effect: Effect = {
     tag,
@@ -1410,7 +1410,7 @@ function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
   const hook = mountWorkInProgressHook();
   const nextDeps = deps === undefined ? null : deps;
   currentlyRenderingFiber.flags |= fiberFlags;
-  //useEffect 的 memoizedState = effects环状链表
+  //useEffect hook 的 memoizedState = effects环状链表
   hook.memoizedState = pushEffect(
     HookHasEffect | hookFlags,
     create,
