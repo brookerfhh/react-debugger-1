@@ -219,6 +219,7 @@ export function enqueueUpdate<State>(
   update: Update<State>,
   lane: Lane, // 优先级
 ) {
+  console.info('enqueueUpdate==', fiber, update)
   // 取出
   const updateQueue = fiber.updateQueue;
   if (updateQueue === null) {

@@ -516,6 +516,7 @@ export function scheduleUpdateOnFiber(
   warnAboutRenderPhaseUpdatesInDEV(fiber);
   // 遍历更新子节点的 优先级，返回FiberRoot
   // 向上收集fiber.childLanes，首次渲染不执行
+  // 从当前fiber到rootFiber的lanes冒泡
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
     warnAboutUpdateOnUnmountedFiberInDEV(fiber);
@@ -586,7 +587,9 @@ export function scheduleUpdateOnFiber(
       // 检测是否没有处于正在进行渲染的任务
       (executionContext & (RenderContext | CommitContext)) === NoContext
     ) {
+      // 如果没有正在渲染的任务
       // Register pending interactions on the root to avoid losing traced interaction data.
+      // 在根上注册挂起的交互以避免丢失跟踪的交互数据。
       schedulePendingInteractions(root, lane);
 
       // This is a legacy edge case. The initial mount of a ReactDOM.render-ed
@@ -596,6 +599,7 @@ export function scheduleUpdateOnFiber(
       // 进入render 和 commit 阶段
       performSyncWorkOnRoot(root);
     } else {
+      // 有正在渲染的任务，则要对新任务 执行调度
       // 注册调度任务, 经过`Scheduler`包的调度, 间接进行`fiber构造`
       ensureRootIsScheduled(root, eventTime);
       schedulePendingInteractions(root, lane);
@@ -1063,6 +1067,7 @@ function performSyncWorkOnRoot(root) {
 
   let lanes;
   let exitStatus;
+  console.info(11,root, workInProgressRoot)
   // 首次渲染 workInProgressRoot为null，所以走else逻辑
   if (
     root === workInProgressRoot &&
@@ -1383,6 +1388,7 @@ function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   }
   // 赋值为 FiberRoot
   workInProgressRoot = root;
+  console.info('workInProgressRoot==', workInProgressRoot )
   // 构建workInProgressRoot 的 rootFiber
   workInProgress = createWorkInProgress(root.current, null);
   workInProgressRootRenderLanes = subtreeRenderLanes = workInProgressRootIncludedLanes = lanes;
@@ -1726,7 +1732,8 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   */
   const current = unitOfWork.alternate;
   setCurrentDebugFiberInDEV(unitOfWork);
-  
+  // console.info('current===', current)
+  // console.info('workInProgress===', unitOfWork)
   let next;
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
      //启动分析器的定时器，并赋成当前时间
