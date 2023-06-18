@@ -1808,6 +1808,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         startProfilerTimer(completedWork);
         // 创建当前Fiber的真实DOM对象，并将其添加到 stateNode 属性中
         next = completeWork(current, completedWork, subtreeRenderLanes);
+        console.info('next==', completedWork.flags, completedWork.subtreeFlags,completedWork.tag)
         // Update render duration assuming we didn't error.
         stopProfilerTimerIfRunningAndRecordDelta(completedWork, false);
       }
@@ -1915,6 +1916,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
     // 调用flushPassiveEffects执行完所有effect的任务
+    // 在提交阶段执行被标记为 "passive" 的副作用。遍历 Fiber 树中的节点，找到被标记为 "passive" 的副作用链表，并按照顺序执行这些副作用。
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
@@ -2039,7 +2041,7 @@ function commitRootImpl(root, renderPriorityLevel) {
 
   */
   /* 
-    在三个子阶段执行之前，需要判断本次更新是否设计 与三个子阶段相关的副作用
+    在三个子阶段执行之前，需要判断本次更新是否涉及 与三个子阶段相关的副作用
     subtreeHasEffects 代表子孙存在副作用flags
     rootHasEffect 代表workInProgress 的 rootFiber 本身存在副作用flags
   */

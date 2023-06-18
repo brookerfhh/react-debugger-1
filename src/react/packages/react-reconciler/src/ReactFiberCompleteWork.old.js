@@ -838,6 +838,7 @@ function completeWork(
         fiberRoot.context = fiberRoot.pendingContext;
         fiberRoot.pendingContext = null;
       }
+      // mount current.child 是null
       if (current === null || current.child === null) {
         // If we hydrated, pop so that we can delete any remaining children
         // that weren't hydrated.
@@ -851,6 +852,7 @@ function completeWork(
           // This handles the case of React rendering into a container with previous children.
           // It's also safe to do for updates too, because current.child would only be null
           // if the previous render was null (so the the container would already be empty).
+          // mount时 会打上Snapshot的标记
           workInProgress.flags |= Snapshot;
         }
       }

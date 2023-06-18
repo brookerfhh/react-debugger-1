@@ -596,6 +596,7 @@ export function processUpdateQueue<State>(
           instance,
         );
         const callback = update.callback;
+        // 如果ReactDOM.render有回调函数
         if (callback !== null) {
           workInProgress.flags |= Callback;
           const effects = queue.effects;

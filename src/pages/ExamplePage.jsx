@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {React, Component, useState} from "./CONST";
 
 class ClassComponent extends Component {
@@ -14,6 +15,9 @@ class ClassComponent extends Component {
 
 function FunctionComponent({name}) {
   const [count, setCount] = useState(0)
+  useEffect(() => {
+    console.info('useEffect')
+  }, [])
   return (
     <div className="function border">
       {name}
