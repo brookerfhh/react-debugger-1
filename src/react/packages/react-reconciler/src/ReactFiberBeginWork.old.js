@@ -262,7 +262,7 @@ export function reconcileChildren(
   renderLanes: Lanes,
 ) {
   if (workInProgress.tag === 3) {
-    debugger
+    // debugger
   }
   // current为当前fiber的alternate 所对应的currentFiber节点
   // 首次渲染时rootFiber有对应的currentFiber，所以else 里 reconcileChildFibers的逻辑，所以rootFiber的子节点会被打上Placement的标记

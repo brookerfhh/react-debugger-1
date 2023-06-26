@@ -2353,7 +2353,6 @@ function flushPassiveEffectsImpl() {
   const prevExecutionContext = executionContext;
   executionContext |= CommitContext;
   const prevInteractions = pushInteractions(root);
-
   commitPassiveUnmountEffects(root.current);
   commitPassiveMountEffects(root, root.current);
 

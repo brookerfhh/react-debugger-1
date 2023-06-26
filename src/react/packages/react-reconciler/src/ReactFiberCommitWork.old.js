@@ -526,7 +526,6 @@ function commitHookEffectListUnmount(
 }
 // 遍历effect链表一次执行effect.create方法
 function commitHookEffectListMount(tag: number, finishedWork: Fiber) {
-  debugger
   // 获取任务队列
   // 函数组件的任务队列
   const updateQueue: FunctionComponentUpdateQueue | null = (finishedWork.updateQueue: any);
@@ -664,6 +663,7 @@ function commitLayoutEffectOnFiber(
         ) {
           try {
             startLayoutEffectTimer();
+            // 执行useEffect
             commitHookEffectListMount(HookLayout | HookHasEffect, finishedWork);
           } finally {
             recordLayoutEffectDuration(finishedWork);
