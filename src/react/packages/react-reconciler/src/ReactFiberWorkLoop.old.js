@@ -1915,8 +1915,12 @@ function commitRootImpl(root, renderPriorityLevel) {
     // no more pending effects.
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
-    // 调用flushPassiveEffects执行完所有effect的任务
-    // 在提交阶段执行被标记为 "passive" 的副作用。遍历 Fiber 树中的节点，找到被标记为 "passive" 的副作用链表，并按照顺序执行这些副作用。
+    /* 调用flushPassiveEffects执行完所有effect的任务
+      在提交阶段执行被标记为 "passive" 的副作用。
+      深度优先遍历 Fiber 树中的节点，找到被标记为 "Passive" 的副作用的Fiber（即有useEffect的fiber节点），并按照顺序执行这些副作用，和副作用返回的回调函数。
+      先执行上一次useEffect的回调函数执行完返回的函数
+      在执行本次的useEffect的回调函数 
+    */
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
