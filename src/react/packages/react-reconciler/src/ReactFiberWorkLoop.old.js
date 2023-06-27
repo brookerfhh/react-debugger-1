@@ -271,6 +271,7 @@ let workInProgressRoot: FiberRoot | null = null;
 // The fiber we're working on
 let workInProgress: Fiber | null = null;
 // The lanes we're rendering
+// 正在渲染的优先级
 let workInProgressRootRenderLanes: Lanes = NoLanes;
 
 // Stack that allows components to change the render lanes for its subtree
@@ -281,10 +282,14 @@ let workInProgressRootRenderLanes: Lanes = NoLanes;
 //
 // Most things in the work loop should deal with workInProgressRootRenderLanes.
 // Most things in begin/complete phases should deal with subtreeRenderLanes.
+// 包含所有子节点的优先级, 是workInProgressRootRenderLanes的超集，唯一不同于workInProgressRootRenderLanes的情况是，当输入一个需要隐藏和取消隐藏的子树时，如Suspense 和 Offscreen组件
+// 大多数情况下，在工作循环的整体流程会使用workInProgressRootRenderLanes
+// 在begin/complete 阶段会使用subtreeRenderLanes
 export let subtreeRenderLanes: Lanes = NoLanes;
 const subtreeRenderLanesCursor: StackCursor<Lanes> = createCursor(NoLanes);
 
 // Whether to root completed, errored, suspended, etc.
+// fiber构造完后, root节点的状态: completed, errored, suspended等
 let workInProgressRootExitStatus: RootExitStatus = RootIncomplete;
 // A fatal error, if one is thrown
 let workInProgressRootFatalError: mixed = null;
@@ -295,8 +300,10 @@ let workInProgressRootFatalError: mixed = null;
 let workInProgressRootIncludedLanes: Lanes = NoLanes;
 // The work left over by components that were visited during this render. Only
 // includes unprocessed updates, not work in bailed out children.
+// 在render期间被跳过(由于优先级不够)的lanes: 只包括未处理的updates, 不包括被复用的fiber节点
 let workInProgressRootSkippedLanes: Lanes = NoLanes;
 // Lanes that were updated (in an interleaved event) during this render.
+// 在render期间被修改过的lanes
 let workInProgressRootUpdatedLanes: Lanes = NoLanes;
 // Lanes that were pinged (in an interleaved event) during this render.
 let workInProgressRootPingedLanes: Lanes = NoLanes;
@@ -390,12 +397,13 @@ export function getCurrentTime() {
 export function requestUpdateLane(fiber: Fiber): Lane {
   // Special cases
   const mode = fiber.mode;
-  console.info('ConcurrentMode==', fiber.mode, BlockingMode, ConcurrentMode)
   if ((mode & BlockingMode) === NoMode) {
-    // 未开启非并发模式，都是同步优先级
+    // 未开启非并发模式，都是同步优先级,即legacy模式
+    console.info('legacy mode==', ConcurrentMode)
     return (SyncLane: Lane);
   } else if ((mode & ConcurrentMode) === NoMode) {
-    console.info('mode==', ConcurrentMode)
+    // blocking模式
+    console.info('blocking mode==', ConcurrentMode)
     return getCurrentUpdateLanePriority() === SyncLanePriority
       ? (SyncLane: Lane)
       : (SyncBatchedLane: Lane);
@@ -420,7 +428,9 @@ export function requestUpdateLane(fiber: Fiber): Lane {
     */
     return pickArbitraryLane(workInProgressRootRenderLanes);
   }
-
+  // concurrent模式
+  console.info('ConcurrentMode mode==', ConcurrentMode)
+  
   // The algorithm for assigning an update to a lane should be stable for all
   // updates at the same priority within the same event. To do this, the inputs
   // to the algorithm must be the same. For example, we use the `renderLanes`
@@ -460,6 +470,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
     (executionContext & DiscreteEventContext) !== NoContext &&
     schedulerPriority === UserBlockingSchedulerPriority
   ) {
+    // executionContext 存在输入事件. 且调度优先级是用户阻塞性质
     lane = findUpdateLane(InputDiscreteLanePriority);
   } else if (getCurrentUpdateLanePriority() !== NoLanePriority) {
     const currentLanePriority = getCurrentUpdateLanePriority();
@@ -607,6 +618,12 @@ export function scheduleUpdateOnFiber(
         // scheduleCallbackForFiber to preserve the ability to schedule a callback
         // without immediately flushing it. We only do this for user-initiated
         // updates, to preserve historical behavior of legacy mode.
+        /* 
+          setState是同步还是异步？
+            如果逻辑进入flushSyncCallbackQueue, 则会主动取消调度, 并刷新回调, 立即进入fiber树构造过程. 
+            当执行setState下一行代码时, fiber树已经重新渲染了, 故setState体现为同步. 
+            正常情况下, 不会取消schedule调度.由于schedule调度是通过MessageChannel触发(宏任务), 故体现为异步.
+        */
         resetRenderTimer();
         flushSyncCallbackQueue();
       }
@@ -1385,6 +1402,7 @@ function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   workInProgressRoot = root;
   // 构建workInProgressRoot 的 rootFiber
   workInProgress = createWorkInProgress(root.current, null);
+  // 重置所有属性
   workInProgressRootRenderLanes = subtreeRenderLanes = workInProgressRootIncludedLanes = lanes;
   workInProgressRootExitStatus = RootIncomplete;
   workInProgressRootFatalError = null;
