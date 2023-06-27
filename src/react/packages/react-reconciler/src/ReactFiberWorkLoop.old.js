@@ -527,6 +527,7 @@ export function scheduleUpdateOnFiber(
   warnAboutRenderPhaseUpdatesInDEV(fiber);
   // 遍历更新子节点的 优先级，返回FiberRoot
   // 向上收集fiber.childLanes，首次渲染不执行
+  // 从当前fiber到rootFiber的lanes冒泡
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
     warnAboutUpdateOnUnmountedFiberInDEV(fiber);
@@ -597,7 +598,9 @@ export function scheduleUpdateOnFiber(
       // 检测是否没有处于正在进行渲染的任务
       (executionContext & (RenderContext | CommitContext)) === NoContext
     ) {
+      // 如果没有正在渲染的任务
       // Register pending interactions on the root to avoid losing traced interaction data.
+      // 在根上注册挂起的交互以避免丢失跟踪的交互数据。
       schedulePendingInteractions(root, lane);
 
       // This is a legacy edge case. The initial mount of a ReactDOM.render-ed
@@ -607,6 +610,7 @@ export function scheduleUpdateOnFiber(
       // 进入render 和 commit 阶段
       performSyncWorkOnRoot(root);
     } else {
+      // 有正在渲染的任务，则要对新任务 执行调度
       // 注册调度任务, 经过`Scheduler`包的调度, 间接进行`fiber构造`
       ensureRootIsScheduled(root, eventTime);
       schedulePendingInteractions(root, lane);
@@ -1080,6 +1084,7 @@ function performSyncWorkOnRoot(root) {
 
   let lanes;
   let exitStatus;
+  console.info(11,root, workInProgressRoot)
   // 首次渲染 workInProgressRoot为null，所以走else逻辑
   if (
     root === workInProgressRoot &&
@@ -1400,6 +1405,7 @@ function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   }
   // 赋值为 FiberRoot
   workInProgressRoot = root;
+  console.info('workInProgressRoot==', workInProgressRoot )
   // 构建workInProgressRoot 的 rootFiber
   workInProgress = createWorkInProgress(root.current, null);
   // 重置所有属性
@@ -1744,7 +1750,8 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   */
   const current = unitOfWork.alternate;
   setCurrentDebugFiberInDEV(unitOfWork);
-  
+  // console.info('current===', current)
+  // console.info('workInProgress===', unitOfWork)
   let next;
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
      //启动分析器的定时器，并赋成当前时间
@@ -1819,6 +1826,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         startProfilerTimer(completedWork);
         // 创建当前Fiber的真实DOM对象，并将其添加到 stateNode 属性中
         next = completeWork(current, completedWork, subtreeRenderLanes);
+        console.info('next==', completedWork.flags, completedWork.subtreeFlags,completedWork.tag)
         // Update render duration assuming we didn't error.
         stopProfilerTimerIfRunningAndRecordDelta(completedWork, false);
       }
@@ -1925,7 +1933,12 @@ function commitRootImpl(root, renderPriorityLevel) {
     // no more pending effects.
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
-    // 调用flushPassiveEffects执行完所有effect的任务
+    /* 调用flushPassiveEffects执行完所有effect的任务
+      在提交阶段执行被标记为 "passive" 的副作用。
+      深度优先遍历 Fiber 树中的节点，找到被标记为 "Passive" 的副作用的Fiber（即有useEffect的fiber节点），并按照顺序执行这些副作用，和副作用返回的回调函数。
+      先执行上一次useEffect的回调函数执行完返回的函数
+      在执行本次的useEffect的回调函数 
+    */
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
@@ -2050,7 +2063,7 @@ function commitRootImpl(root, renderPriorityLevel) {
 
   */
   /* 
-    在三个子阶段执行之前，需要判断本次更新是否设计 与三个子阶段相关的副作用
+    在三个子阶段执行之前，需要判断本次更新是否涉及 与三个子阶段相关的副作用
     subtreeHasEffects 代表子孙存在副作用flags
     rootHasEffect 代表workInProgress 的 rootFiber 本身存在副作用flags
   */
@@ -2362,7 +2375,6 @@ function flushPassiveEffectsImpl() {
   const prevExecutionContext = executionContext;
   executionContext |= CommitContext;
   const prevInteractions = pushInteractions(root);
-
   commitPassiveUnmountEffects(root.current);
   commitPassiveMountEffects(root, root.current);
 

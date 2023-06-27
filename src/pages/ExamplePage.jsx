@@ -1,8 +1,12 @@
+import { useEffect } from "react";
 import {React, Component, useState} from "./CONST";
 
 class ClassComponent extends Component {
   state = {
     count: 0
+  }
+  componentWillUnmount() {
+    console.info('componentWillUnmount==')
   }
   render() {
     const { count } = this.state
@@ -23,14 +27,20 @@ function FunctionComponent({name}) {
   );
 }
 const App = () => {
+  const [show, setShow] = useState(true)
+  useEffect(() => {
+   return () => {
+    debugger
+   } 
+  })
   return (
     <div className="box border">
       <p style={{border:'1px solid blue'}}>
         <span>方<span>hh</span></span>
-        <button>哈哈</button>
+        <button onClick={() => {setShow(false)}}>哈哈</button>
       </p>
       <ClassComponent name="class-hh"></ClassComponent>
-      <FunctionComponent  name="function-hh"></FunctionComponent>
+      {show && <FunctionComponent  name="function-hh"></FunctionComponent>}
     </div>
   )
 }

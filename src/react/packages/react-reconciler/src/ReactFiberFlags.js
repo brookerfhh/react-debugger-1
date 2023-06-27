@@ -32,6 +32,11 @@ export const Callback = /*                     */ 0b0000000000000001000000;
 export const DidCapture = /*                   */ 0b0000000000000010000000;
 // HostComponent ref属性的创建与更新
 export const Ref = /*                          */ 0b0000000000000100000000;
+/* 
+  Snapshot 主要处理两种类型的fiber
+    ClassComponent，执行getSnapshotBeforeUpdate方法
+    HostRoot，即rootFiber，清空HostRoot挂载的内容，方便Mutation阶段渲染
+*/
 export const Snapshot = /*                     */ 0b0000000000001000000000;
 // FC 中定义了useEffect 且需要触发回调函数
 export const Passive = /*                      */ 0b0000000000010000000000;

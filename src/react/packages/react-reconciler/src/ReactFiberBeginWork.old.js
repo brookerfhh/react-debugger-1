@@ -250,7 +250,7 @@ if (__DEV__) {
   didWarnAboutTailOptions = {};
   didWarnAboutDefaultPropsOnFunctionComponent = {};
 }
-// 构建子节点
+// 构建workInProgress 的子节点
 export function reconcileChildren(
   // 旧Fiber
   current: Fiber | null,
@@ -261,9 +261,12 @@ export function reconcileChildren(
   // 优先级
   renderLanes: Lanes,
 ) {
+  if (workInProgress.tag === 3) {
+    // debugger
+  }
   // current为当前fiber的alternate 所对应的currentFiber节点
-  // 首次渲染时rootFiber的alternate有值，所以走else逻辑
-  // rootFiber以下的节点 alternate 即 current都为空，所以走下面的逻辑
+  // 首次渲染时rootFiber有对应的currentFiber，所以else 里 reconcileChildFibers的逻辑，所以rootFiber的子节点会被打上Placement的标记
+  // 而rootFiber以下的节点 alternate 即 currentFiber都为空，所以mountChildFibers的逻辑，所以以下的子节点不会被打上标记
   if (current === null) {
     // 挂载
     // If this is a fresh new component that hasn't been rendered yet, we
@@ -1177,6 +1180,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
   // 拷贝更新队列,把current.updateQueue 拷贝到 workInProgress.updateQueue
   cloneUpdateQueue(current, workInProgress);
   // 获取updateQueue.payload 赋值给 workInProgress.memoizedState
+  // 并且如果ReactDOM.render有回调函数，会给flags打上 Callback的标记，即64
   processUpdateQueue(workInProgress, nextProps, null, renderLanes);
   // 获取RootFiber 的 vDom
   const nextState = workInProgress.memoizedState;
@@ -1243,6 +1247,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
       // inserted into the React tree here. It just happens to not need DOM
       // mutations because it already exists.
       node.flags = (node.flags & ~Placement) | Hydrating;
+      console.info('node.flags==', node.flags)
       node = node.sibling;
     }
   } else {
@@ -3252,8 +3257,9 @@ function beginWork(
   renderLanes: Lanes,
 ): Fiber | null {
 
+ 
   let updateLanes = workInProgress.lanes;
-
+  console.info('begin work ===', current, workInProgress.flags)
   if (__DEV__) {
     if (workInProgress._debugNeedsRemount && current !== null) {
       // This will restart the begin phase with a new fiber.
@@ -3271,7 +3277,9 @@ function beginWork(
       );
     }
   }
-
+   /* 
+    mount 阶段，第一个执行beginWork的fiber是rootFiber，也只有rootFiber的currentFiber不是null
+  */
   if (current !== null) {
     // current !== null 说明是更新 update
     // TODO: The factoring of this block is weird.
@@ -3287,7 +3295,6 @@ function beginWork(
 
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
-
     if (
       oldProps !== newProps ||
       hasLegacyContextChanged() ||
@@ -3520,6 +3527,7 @@ function beginWork(
         // nor legacy context. Set this to false. If an update queue or context
         // consumer produces a changed value, it will set this to true. Otherwise,
         // the component will assume the children have not changed and bail out.
+        // rootFiber mount 时，设置为false
         didReceiveUpdate = false;
       }
     }
@@ -3589,7 +3597,7 @@ function beginWork(
         renderLanes,
       );
     }
-    // 3 根节点将进入这个逻辑,即rootFiber
+    // 3 根节点将进入这个逻辑,即rootFiber，tag = 3
     case HostRoot:
       return updateHostRoot(current, workInProgress, renderLanes);
       // 5 普通的react元素，即dom 标签对应的节点将进入这个逻辑

@@ -348,6 +348,7 @@ export function updateContainer(
   // 将update任务对象 加入到当前Fiber即rootFiber的更新队列当中，即updateQueue
   // 待执行的任务都会被存储在fiber.updateQueue.shared.pending
   enqueueUpdate(current, update, lane);
+  console.info('enqueueUpdate after===', current, update)
   // 调度和更新 current 对象, 即开始执行任务
   // 这一步执行后 dom已经挂载了
   const root = scheduleUpdateOnFiber(current, lane, eventTime);

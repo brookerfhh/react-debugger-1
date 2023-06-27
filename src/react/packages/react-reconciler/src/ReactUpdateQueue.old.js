@@ -219,6 +219,7 @@ export function enqueueUpdate<State>(
   update: Update<State>,
   lane: Lane, // 优先级
 ) {
+  console.info('enqueueUpdate==', fiber, update)
   // 取出
   const updateQueue = fiber.updateQueue;
   if (updateQueue === null) {
@@ -595,6 +596,7 @@ export function processUpdateQueue<State>(
           instance,
         );
         const callback = update.callback;
+        // 如果ReactDOM.render有回调函数
         if (callback !== null) {
           workInProgress.flags |= Callback;
           const effects = queue.effects;

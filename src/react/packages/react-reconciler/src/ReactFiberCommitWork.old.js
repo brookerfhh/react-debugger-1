@@ -392,6 +392,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
     主要是处理包含Snapshot flag的fiber， 主要处理两种类型的fiber
       ClassComponent，执行getSnapshotBeforeUpdate方法
       HostRoot，即rootFiber，清空HostRoot挂载的内容，方便Mutation阶段渲染
+    在commit节点，最后的rootFiber在执行completeWork时，会打上Snapshot的标记
   */
   if ((flags & Snapshot) !== NoFlags) {
     setCurrentDebugFiberInDEV(finishedWork);
@@ -526,6 +527,7 @@ function commitHookEffectListUnmount(
 // 遍历effect链表一次执行effect.create方法
 function commitHookEffectListMount(tag: number, finishedWork: Fiber) {
   // 获取任务队列
+  // 函数组件的任务队列
   const updateQueue: FunctionComponentUpdateQueue | null = (finishedWork.updateQueue: any);
   // 获取lastEffect
   const lastEffect = updateQueue !== null ? updateQueue.lastEffect : null;
@@ -661,6 +663,7 @@ function commitLayoutEffectOnFiber(
         ) {
           try {
             startLayoutEffectTimer();
+            // 执行useEffect
             commitHookEffectListMount(HookLayout | HookHasEffect, finishedWork);
           } finally {
             recordLayoutEffectDuration(finishedWork);
@@ -2277,11 +2280,14 @@ export function commitPassiveMountEffects(
   nextEffect = finishedWork;
   commitPassiveMountEffects_begin(finishedWork, root);
 }
-
+/* 
+  向下遍历直到找到 有子fiber并且子fiber存在副作用，即subtreeFlags 不为0，对其执行commitPassiveMountEffects_complete
+*/
 function commitPassiveMountEffects_begin(subtreeRoot: Fiber, root: FiberRoot) {
   while (nextEffect !== null) {
     const fiber = nextEffect;
     const firstChild = fiber.child;
+    // 当前fiber有子fiber 并且子fiber有副作用 
     if ((fiber.subtreeFlags & PassiveMask) !== NoFlags && firstChild !== null) {
       ensureCorrectReturnPointer(firstChild, fiber);
       nextEffect = firstChild;
@@ -2290,7 +2296,11 @@ function commitPassiveMountEffects_begin(subtreeRoot: Fiber, root: FiberRoot) {
     }
   }
 }
-
+/* 
+  对当前fiber执行flags对应的操作，即执行commitPassiveMountOnFiber，
+  执行完后，如果当前fiber有兄弟fiber，则将兄弟fiber赋值给nextEffect，然后再对其执行commitPassiveMountEffects_begin
+  如果没用兄弟节点，则将父节点赋值给 nextEffect，然后对其执行commitPassiveMountEffects_complete
+*/
 function commitPassiveMountEffects_complete(
   subtreeRoot: Fiber,
   root: FiberRoot,

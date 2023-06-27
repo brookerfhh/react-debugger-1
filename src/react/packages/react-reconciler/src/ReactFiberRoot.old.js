@@ -93,6 +93,7 @@ export function createFiberRoot(
   strictModeLevelOverride: null | number,
 ): FiberRoot {
   // 创建FiberRoot
+  // containerInfo表示根节点对应的真实DOM容器
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
