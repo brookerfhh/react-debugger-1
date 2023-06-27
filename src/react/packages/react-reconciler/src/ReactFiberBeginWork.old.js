@@ -1040,6 +1040,7 @@ function updateClassComponent(
     hasContext,
     renderLanes,
   );
+  console.info('ClassComponent Fiver', nextUnitOfWork)
   if (__DEV__) {
     const inst = workInProgress.stateNode;
     if (shouldUpdate && inst.props !== nextProps) {

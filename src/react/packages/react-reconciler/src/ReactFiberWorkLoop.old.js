@@ -528,6 +528,11 @@ export function scheduleUpdateOnFiber(
   // 遍历更新子节点的 优先级，返回FiberRoot
   // 向上收集fiber.childLanes，首次渲染不执行
   // 从当前fiber到rootFiber的lanes冒泡
+  /* 
+    markUpdateLaneFromFiberToRoot 只在对比更新阶段才发挥出它的作用, 
+    它找出了fiber树中受到本次update影响的所有节点, 
+    并设置这些节点的fiber.lanes或fiber.childLanes(在legacy模式下为SyncLane)以备fiber树构造阶段使用.
+  */
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
     warnAboutUpdateOnUnmountedFiberInDEV(fiber);
@@ -592,13 +597,14 @@ export function scheduleUpdateOnFiber(
   if (lane === SyncLane) {
     if (
       // Check if we're inside unbatchedUpdates
-      // 检测是否处于非批量更新模式, 判断是否合成事件
+      // 是否包含LegacyUnbatchedContext，首次渲染不包含，首次渲染后会将LegacyUnbatchedContext加入到executionContext，所以后续的更新会走else的逻辑
+      //  检测是否处于非批量更新模式, 判断是否合成事件
       (executionContext & LegacyUnbatchedContext) !== NoContext &&
       // Check if we're not already rendering
       // 检测是否没有处于正在进行渲染的任务
       (executionContext & (RenderContext | CommitContext)) === NoContext
     ) {
-      // 如果没有正在渲染的任务
+      // 首次更新 && 如果没有正在渲染的任务
       // Register pending interactions on the root to avoid losing traced interaction data.
       // 在根上注册挂起的交互以避免丢失跟踪的交互数据。
       schedulePendingInteractions(root, lane);
@@ -610,7 +616,7 @@ export function scheduleUpdateOnFiber(
       // 进入render 和 commit 阶段
       performSyncWorkOnRoot(root);
     } else {
-      // 有正在渲染的任务，则要对新任务 执行调度
+      // 更新 or 有正在渲染的任务，则要对新任务 执行调度 
       // 注册调度任务, 经过`Scheduler`包的调度, 间接进行`fiber构造`
       ensureRootIsScheduled(root, eventTime);
       schedulePendingInteractions(root, lane);

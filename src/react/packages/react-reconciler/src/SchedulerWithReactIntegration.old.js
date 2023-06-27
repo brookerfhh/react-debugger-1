@@ -134,6 +134,7 @@ export function scheduleCallback(
 export function scheduleSyncCallback(callback: SchedulerCallback) {
   // Push this callback into an internal queue. We'll flush these either in
   // the next tick, or earlier if something calls `flushSyncCallbackQueue`.
+  // 如果此时syncQueue是空的，则马上执行flushSyncCallbackQueueImpl 去遍历执行syncQueue数组中的回调函数
   if (syncQueue === null) {
     syncQueue = [callback];
 
