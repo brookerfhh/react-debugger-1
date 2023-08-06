@@ -16,9 +16,10 @@ export const NoFlags = /*                      */ 0b0000000000000000000000;
 export const PerformedWork = /*                */ 0b0000000000000000000001;
 
 // You can change the rest (and add more).
-// 当前fiber或者子孙fiber 存在 需要插入或移动的 HostComponent或HostText
+// 当前fiber或者子孙fiber 存在 需要插入或移动的 HostComponent或HostText，即即主要是标记 插入或移动
 export const Placement = /*                    */ 0b0000000000000000000010; // 2
-// ClassComponent存在更新，且定义了componentDidMount或者componentDidUpdate方法；HOSTComponent发送属性的变化；HostText发生内容的变化；FC定义了useLayoutEffect
+// ClassComponent存在更新，且定义了componentDidMount或者componentDidUpdate方法；
+// HOSTComponent发生属性的变化；HostText发生内容的变化；FC定义了useLayoutEffect
 export const Update = /*                       */ 0b0000000000000000000100; // 4
 export const PlacementAndUpdate = /*           */ Placement | Update;// 6
 // 需要被删除

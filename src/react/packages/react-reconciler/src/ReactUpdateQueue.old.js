@@ -168,6 +168,13 @@ export function initializeUpdateQueue<State>(fiber: Fiber): void {
     baseState: fiber.memoizedState,
     firstBaseUpdate: null,
     lastBaseUpdate: null,
+    /* 
+      为什么用shared.pending来保存updated对象？
+        这样可以在current fiber树和workInProgress树 共用一个updateQueue的引用，
+          可以减少不必要的内存分配和复制操作，如果直接使用一个普通的对象，每次更新都会创建一个新的对象。
+        另外，使用包裹对象的形式，还可以方便地在 update 对象上添加其他属性或扩展功能。
+          通过将属性放置在 shared 对象中，可以避免直接污染 update 对象本身。
+    */
     shared: {
       pending: null,
       interleaved: null,
