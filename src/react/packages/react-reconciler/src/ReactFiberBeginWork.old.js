@@ -1578,6 +1578,7 @@ function mountIndeterminateComponent(
   //   }
   // }
 
+  // 判断是否是classComponent组件
   if (
     // Run these checks in production only if the flag is off.
     // Eventually we'll delete this branch altogether.
@@ -1587,6 +1588,7 @@ function mountIndeterminateComponent(
     typeof value.render === 'function' &&
     value.$$typeof === undefined
   ) {
+    // 如果是ClassComponent组件
     if (__DEV__) {
       const componentName = getComponentNameFromType(Component) || 'Unknown';
       if (!didWarnAboutModulePatternComponent[componentName]) {
@@ -3184,9 +3186,9 @@ function bailoutOnAlreadyFinishedWork(
       return null;
     }
   }
-  // 只有子fiber命中bailout策略
   // This fiber doesn't have work, but its subtree does. Clone the child
   // fibers and continue.
+  // 当前fiber不用更新, 但是子节点需要更新. clone并返回子节点
   cloneChildFibers(current, workInProgress);
   return workInProgress.child;
 }
@@ -3307,6 +3309,7 @@ function beginWork(
       // 需要更新
       didReceiveUpdate = true;
     } else if (!includesSomeLane(renderLanes, updateLanes)) {
+      // 当前渲染优先级renderLanes不包括fiber.lanes, 表明当前fiber节点无需更新
       didReceiveUpdate = false;
       // This fiber does not have any pending work. Bailout without entering
       // the begin phase. There's still some bookkeeping we that needs to be done
@@ -3517,6 +3520,7 @@ function beginWork(
           break;
         }
       }
+      // 当前fiber节点无需更新, 调用bailoutOnAlreadyFinishedWork循环检测子节点是否需要更新
       return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
     } else {
       if ((current.flags & ForceUpdateForLegacySuspense) !== NoFlags) {

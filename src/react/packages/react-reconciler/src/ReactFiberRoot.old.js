@@ -38,8 +38,8 @@ function FiberRootNode(containerInfo, tag, hydrate) {
   this.context = null;
   this.pendingContext = null;
   this.hydrate = hydrate;
-  this.callbackNode = null;
-  this.callbackPriority = NoLanePriority;
+  this.callbackNode = null; // 存储 正在调度的任务
+  this.callbackPriority = NoLanePriority; // 存储 正在调度的任务的优先级
   this.eventTimes = createLaneMap(NoLanes);
   this.expirationTimes = createLaneMap(NoTimestamp);
 
