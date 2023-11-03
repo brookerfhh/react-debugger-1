@@ -85,6 +85,7 @@ function FiberRootNode(containerInfo, tag, hydrate) {
     }
   }
 }
+// 创建了fiberRoot 同时也创建了两个rootFiber
 export function createFiberRoot(
   containerInfo: any,
   tag: RootTag,
@@ -103,6 +104,7 @@ export function createFiberRoot(
   // stateNode is any.
   // 创建 rootFiber，id为root的div所对应的fiber
   const uninitializedFiber = createHostRootFiber(tag, strictModeLevelOverride);
+  console.info('uninitializedFiber==', uninitializedFiber)
   // fiberRoot.current => rootFiber
   root.current = uninitializedFiber;
   // rootFiber.stateNode => fiberRoot

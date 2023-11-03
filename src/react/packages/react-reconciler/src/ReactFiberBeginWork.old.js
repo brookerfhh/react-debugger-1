@@ -3262,7 +3262,6 @@ function beginWork(
 
  
   let updateLanes = workInProgress.lanes;
-  console.info('begin work ===', current, workInProgress.flags)
   if (__DEV__) {
     if (workInProgress._debugNeedsRemount && current !== null) {
       // This will restart the begin phase with a new fiber.

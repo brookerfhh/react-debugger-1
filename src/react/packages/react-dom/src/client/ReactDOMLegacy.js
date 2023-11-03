@@ -240,6 +240,7 @@ function legacyRenderSubtreeIntoContainer(
         因为批量更新是异步的 是可以被打断的。
         但是初始化渲染应该尽快渲染，不应该被打断，所以不执行批量更新
     */
+   console.info('fiberRoot==', fiberRoot)
     unbatchedUpdates(() => {
       updateContainer(children, fiberRoot, parentComponent, callback);
     });
@@ -340,6 +341,7 @@ export function render(
     isValidContainer(container),
     'Target container is not a DOM element.',
   );
+  
   if (__DEV__) {
     const isModernRoot =
       isContainerMarkedAsRoot(container) &&

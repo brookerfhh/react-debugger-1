@@ -251,6 +251,7 @@ function findHostInstanceWithWarning(
   return findHostInstance(component);
 }
 
+// 创建了fiberRoot 同时也创建了两个rootFiber
 export function createContainer(
   containerInfo: Container,
   tag: RootTag,
@@ -267,11 +268,15 @@ export function createContainer(
   );
 }
 /* 
-  创建一个任务，并将任务放到任务队列中
+  取出currentFiber的rootFiber
+  获取当前更新的优先级（根据不同的模式）
+  创建一个update任务对象
+  将update任务对象 加入到rootFiber的更新队列当中，即updateQueue
+  将rootFiber传给scheduleUpdateOnFiber进行调度更新
 */
 export function updateContainer(
   element: ReactNodeList, // 要渲染的ReactElement
-  container: OpaqueRoot, // fiberRoot对象
+  container: FiberRoot, // fiberRoot对象
   parentComponent: ?React$Component<any, any>, // 父组件。初始渲染时为null
   callback: ?Function, //
 ): Lane {

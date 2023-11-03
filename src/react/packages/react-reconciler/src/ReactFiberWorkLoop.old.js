@@ -512,7 +512,18 @@ function requestRetryLane(fiber: Fiber) {
 
   return claimNextRetryLane();
 }
-/*  */
+/*
+  执行markUpdateLaneFromFiberToRoot从当前fiber向上冒泡收集lanes和childLanes
+  在root上标记更新，将update的lane放到root.pendingLanes
+  判断是不是同步模式：
+    如果是
+      判断是否有正在更新的任务：
+        如果有：
+          执行ensureRootIsScheduled进行任务的调度
+        没有正在更新的任务：
+          执行performSyncWorkOnRoot进render和commit阶段
+    不是同步模式
+*/
 export function scheduleUpdateOnFiber(
   fiber: Fiber, // 初始渲染时 为 rootFiber
   lane: Lane,
@@ -743,6 +754,9 @@ export function isInterleavedUpdate(fiber: Fiber, lane: Lane) {
 // exiting a task.
 /* 
   确认 rootFiber 是否需要调度
+  通过新旧任务的优先级对比，判断是否需要注册新的task
+  如果需要：
+    根据优先级注册task，主要是执行performSyncWorkOnRoot，进入render和commit阶段
 */
 function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   // 前半部分: 判断是否需要注册新的调度
@@ -1832,7 +1846,6 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         startProfilerTimer(completedWork);
         // 创建当前Fiber的真实DOM对象，并将其添加到 stateNode 属性中
         next = completeWork(current, completedWork, subtreeRenderLanes);
-        console.info('next==', completedWork.flags, completedWork.subtreeFlags,completedWork.tag)
         // Update render duration assuming we didn't error.
         stopProfilerTimerIfRunningAndRecordDelta(completedWork, false);
       }
