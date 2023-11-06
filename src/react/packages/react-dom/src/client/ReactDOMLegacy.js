@@ -241,6 +241,7 @@ function legacyRenderSubtreeIntoContainer(
         但是初始化渲染应该尽快渲染，不应该被打断，所以不执行批量更新
     */
    console.info('fiberRoot==', fiberRoot)
+   debugger
     unbatchedUpdates(() => {
       updateContainer(children, fiberRoot, parentComponent, callback);
     });
