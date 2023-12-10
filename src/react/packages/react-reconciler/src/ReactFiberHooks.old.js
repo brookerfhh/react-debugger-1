@@ -358,7 +358,7 @@ export function renderWithHooks<Props, SecondArg>(
   renderLanes = nextRenderLanes;
   currentlyRenderingFiber = workInProgress;
 
-  if (__DEV__) {
+  /* if (__DEV__) {
     hookTypesDev =
       current !== null
         ? ((current._debugHookTypes: any): Array<HookType>)
@@ -367,7 +367,7 @@ export function renderWithHooks<Props, SecondArg>(
     // Used for hot reloading:
     ignorePreviousDependencies =
       current !== null && current.type !== workInProgress.type;
-  }
+  } */
 
   workInProgress.memoizedState = null;
   workInProgress.updateQueue = null;
@@ -386,7 +386,7 @@ export function renderWithHooks<Props, SecondArg>(
   // Using memoizedState to differentiate between mount/update only works if at least one stateful hook is used.
   // Non-stateful hooks (e.g. context) don't get added to memoizedState,
   // so memoizedState would be null during updates and mounts.
-  if (__DEV__) {
+ /*  if (__DEV__) {
     if (current !== null && current.memoizedState !== null) {
       ReactCurrentDispatcher.current = HooksDispatcherOnUpdateInDEV;
     } else if (hookTypesDev !== null) {
@@ -399,12 +399,12 @@ export function renderWithHooks<Props, SecondArg>(
     } else {
       ReactCurrentDispatcher.current = HooksDispatcherOnMountInDEV;
     }
-  } else {
+  } else { */
     ReactCurrentDispatcher.current =
       current === null || current.memoizedState === null
         ? HooksDispatcherOnMount
         : HooksDispatcherOnUpdate;
-  }
+  // }
 
   let children = Component(props, secondArg);
 

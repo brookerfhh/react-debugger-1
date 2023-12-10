@@ -114,7 +114,11 @@ ReactDOMRoot.prototype.unmount = ReactDOMBlockingRoot.prototype.unmount = functi
     unmarkContainerAsRoot(container);
   });
 };
-
+/* 
+  创建fiberRoot 和 两个 rootFiber
+  标记__reactContainer 属性
+  返回fiberRoot
+*/
 function createRootImpl(
   container: Container,
   tag: RootTag,
@@ -133,7 +137,7 @@ function createRootImpl(
     options != null && options.unstable_strictModeLevel != null
       ? options.unstable_strictModeLevel
       : null;
-    // 创建fiberRoot 
+    // 创建fiberRoot 和 两个 rootFiber
   const root = createContainer(
     container,
     tag,
@@ -181,7 +185,9 @@ export function createBlockingRoot(
   warnIfReactDOMContainerInDEV(container);
   return new ReactDOMBlockingRoot(container, BlockingRoot, options);
 }
-
+/* 
+  创建了fiberRoot 和 rootFiber
+*/
 export function createLegacyRoot(
   container: Container,
   options?: RootOptions,

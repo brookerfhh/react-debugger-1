@@ -119,7 +119,7 @@ function FiberNode(
   this.key = key;
   this.elementType = null;
   this.type = null;
-  this.stateNode = null;
+  this.stateNode = null; // 根据Fiber的类型存储数据，HostComponent类型指向与fiber节点对应的 dom 节点, HostFiber指向fiberRoot节点，classComponent类型的fiber指向其实例对象
 
   // Fiber
   this.return = null;
@@ -129,23 +129,23 @@ function FiberNode(
 
   this.ref = null;
 
-  this.pendingProps = pendingProps;
-  this.memoizedProps = null;
-  this.updateQueue = null;
-  this.memoizedState = null;
-  this.dependencies = null;
+  this.pendingProps = pendingProps; // 此次要更新的props
+  this.memoizedProps = null; // 上一次生成子节点时用到的属性
+  this.updateQueue = null; //  存储update更新对象的队列, 
+  this.memoizedState = null; // 上一次生成fiber时的state状态
+  this.dependencies = null; // 该 fiber 节点所依赖的(contexts, events)等
 
   this.mode = mode;
 
   // Effects
-  this.flags = NoFlags;
-  this.subtreeFlags = NoFlags;
-  this.deletions = null;
+  this.flags = NoFlags; // 副作用标记
+  this.subtreeFlags = NoFlags; // 包含更深层次的子节点的副作用
+  this.deletions = null; // 存储将要被删除的子节点
 
   this.lanes = NoLanes;
   this.childLanes = NoLanes;
 
-  this.alternate = null;
+  this.alternate = null;// 指向另一个fiber树的对应节点
 
   if (enableProfilerTimer) {
     // Note: The following is done to avoid a v8 performance cliff.

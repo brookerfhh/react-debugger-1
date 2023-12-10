@@ -512,7 +512,18 @@ function requestRetryLane(fiber: Fiber) {
 
   return claimNextRetryLane();
 }
-/*  */
+/*
+  执行markUpdateLaneFromFiberToRoot从当前fiber向上冒泡收集lanes和childLanes
+  在root上标记更新，将update的lane放到root.pendingLanes
+  判断是不是同步模式：
+    如果是
+      判断是否有正在更新的任务：
+        如果有：
+          执行ensureRootIsScheduled进行任务的调度
+        没有正在更新的任务：
+          执行performSyncWorkOnRoot进render和commit阶段
+    不是同步模式
+*/
 export function scheduleUpdateOnFiber(
   fiber: Fiber, // 初始渲染时 为 rootFiber
   lane: Lane,
@@ -672,7 +683,7 @@ export function scheduleUpdateOnFiber(
 // on a fiber.
 /* 
   从当前fiber向上遍历 每次遍历,每个祖先fiber的childLanes都会附加 源fiber通过requestUpdate选定的lane, 
-  最后遍历到rootFiber,最终返回rootFiber的stateNode. 这一过程可以称为lanes冒泡
+  最后遍历到rootFiber,最终返回rootFiber的stateNode，即fiberRoot节点 这一过程可以称为lanes冒泡
 */
 function markUpdateLaneFromFiberToRoot(
   sourceFiber: Fiber,
@@ -743,6 +754,9 @@ export function isInterleavedUpdate(fiber: Fiber, lane: Lane) {
 // exiting a task.
 /* 
   确认 rootFiber 是否需要调度
+  通过新旧任务的优先级对比，判断是否需要注册新的task
+  如果需要：
+    根据优先级注册task，主要是执行performSyncWorkOnRoot，进入render和commit阶段
 */
 function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   // 前半部分: 判断是否需要注册新的调度
@@ -1378,8 +1392,8 @@ export function popRenderLanes(fiber: Fiber) {
 }
 /* 
   为FiberRoot 添加|重置 finishedWork和finishedLanes 属性
-  构建workInProgressRoot = root
-  初始化workInProgress 为 rootFiber的复制，并且通过alternate互相引用
+  将fiberRoot 赋值给 workInProgressRoot
+  创建 current rootFiber 对应的 workInProgress 的rootFiber，并赋值给workInProgress
   即 rootFiber.alternate = workInProgress
     workInProgress.alternate = rootFiber
 
@@ -1411,10 +1425,10 @@ function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   }
   // 赋值为 FiberRoot
   workInProgressRoot = root;
-  console.info('workInProgressRoot==', workInProgressRoot )
-  // 构建workInProgressRoot 的 rootFiber
+  console.info('prepareFreshStack init workInProgressRoot = fiberRoot ', workInProgressRoot )
+  // 创建workInProgress树的rootFiber
   workInProgress = createWorkInProgress(root.current, null);
-  // 重置所有属性
+  // 初始化workInProgress的rootFiber的属性
   workInProgressRootRenderLanes = subtreeRenderLanes = workInProgressRootIncludedLanes = lanes;
   workInProgressRootExitStatus = RootIncomplete;
   workInProgressRootFatalError = null;
@@ -1584,7 +1598,10 @@ export function renderHasNotSuspendedYet(): boolean {
   return workInProgressRootExitStatus === RootIncomplete;
 }
 /* 
-  构建workInProgressFiber树 以及 rootFiber
+  mount：
+    赋值workInProgressRoot 为 FiberRoot
+    根据current的rootFiber 创建workInProgressFiber树 的 rootFiber，并将 rootFiber 赋值给 workInProgress
+    从rootFiber开始构建一整颗workInProgressFiber树
 */
 function renderRootSync(root: FiberRoot, lanes: Lanes) {
   // executionContext 此时= RenderContext = 8
@@ -1598,7 +1615,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
     // prepareFreshStack 为 取消之前构建的workInProgress，重置workInProgress
     // 初始化 或 重置root的finishedWork 和 finishedLanes属性
-    // 构建workInProgressRoot，和构建workInProgressRoot的rootFiber
+    // 构建workInProgressRoot 和 构建 workInProgressRoot 的 rootFiber
     prepareFreshStack(root, lanes);
     startWorkOnPendingInteractions(root, lanes);
   }
@@ -1832,7 +1849,6 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         startProfilerTimer(completedWork);
         // 创建当前Fiber的真实DOM对象，并将其添加到 stateNode 属性中
         next = completeWork(current, completedWork, subtreeRenderLanes);
-        console.info('next==', completedWork.flags, completedWork.subtreeFlags,completedWork.tag)
         // Update render duration assuming we didn't error.
         stopProfilerTimerIfRunningAndRecordDelta(completedWork, false);
       }
