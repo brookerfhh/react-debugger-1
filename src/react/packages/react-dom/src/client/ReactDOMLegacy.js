@@ -204,7 +204,7 @@ function legacyRenderSubtreeIntoContainer(
     有值，说明container 已经是初始化过的渲染容器，要执行更新
     没有值，说明是初始渲染
   */
-  
+  console.info('container==', container)
   let root: RootType = (container._reactRootContainer: any);
   let fiberRoot;
   if (!root) {
@@ -216,7 +216,8 @@ function legacyRenderSubtreeIntoContainer(
       为_reactRootContainer 添加 _internalRoot
       _internalRoot 即为 FiberRoot
 
-      legacyCreateRootFromDOMContainer执行 创建了fiberRoot和rootFiber，并且返回 rootFiber
+      legacyCreateRootFromDOMContainer执行 创建了fiberRoot 和 hostRootFiber，并且返回 fiberRoot
+      hostRootFiber
     */
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,
@@ -240,8 +241,7 @@ function legacyRenderSubtreeIntoContainer(
         因为批量更新是异步的 是可以被打断的。
         但是初始化渲染应该尽快渲染，不应该被打断，所以不执行批量更新
     */
-   console.info('fiberRoot==', fiberRoot)
-   debugger
+   
     unbatchedUpdates(() => {
       updateContainer(children, fiberRoot, parentComponent, callback);
     });

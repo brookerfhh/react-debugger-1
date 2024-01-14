@@ -102,6 +102,7 @@ export function createFiberRoot(
   // stateNode is any.
   const uninitializedFiber = createHostRootFiber(tag, strictModeLevelOverride);
   root.current = uninitializedFiber;
+  
   uninitializedFiber.stateNode = root;
 
   if (enableCache) {

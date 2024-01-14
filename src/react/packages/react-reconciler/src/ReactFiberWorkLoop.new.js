@@ -1626,9 +1626,11 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
   }
 }
 
+
 /** @noinline */
 function workLoopConcurrent() {
   // Perform work until Scheduler asks us to yield
+  // 中断执行后，workInProgress 会保存下一个需要构建的 fiber，下次执行从 workInProgress 继续构建
   while (workInProgress !== null && !shouldYield()) {
     performUnitOfWork(workInProgress);
   }

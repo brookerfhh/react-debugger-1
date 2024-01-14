@@ -251,7 +251,7 @@ function findHostInstanceWithWarning(
   return findHostInstance(component);
 }
 
-// 创建了fiberRoot 同时也创建了两个rootFiber
+// 创建了fiberRoot 和 hostRootFiber
 export function createContainer(
   containerInfo: Container,
   tag: RootTag,
@@ -284,7 +284,7 @@ export function updateContainer(
     onScheduleRoot(container, element);
   }
   // container = FiberRoot
-  // current 当前fiber，初始化时 为 fiberRoot对应的 rootFiber
+  // current 当前fiber，初始化时 为 fiberRoot对应的 hostRootFiber
   const current = container.current;
   const eventTime = requestEventTime();
   if (__DEV__) {

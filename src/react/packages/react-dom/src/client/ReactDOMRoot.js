@@ -137,7 +137,7 @@ function createRootImpl(
     options != null && options.unstable_strictModeLevel != null
       ? options.unstable_strictModeLevel
       : null;
-    // 创建fiberRoot 和 两个 rootFiber
+    // 创建了fiberRoot 和 hostRootFiber
   const root = createContainer(
     container,
     tag,
