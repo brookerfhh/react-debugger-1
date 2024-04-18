@@ -525,7 +525,7 @@ function requestRetryLane(fiber: Fiber) {
     不是同步模式
 */
 export function scheduleUpdateOnFiber(
-  fiber: Fiber, // 初始渲染时 为 rootFiber
+  fiber: Fiber, // 初始渲染时 为 hostRootFiber
   lane: Lane,
   eventTime: number,
 ): FiberRoot | null {
@@ -753,7 +753,7 @@ export function isInterleavedUpdate(fiber: Fiber, lane: Lane) {
 // root has work on. This function is called on every update, and right before
 // exiting a task.
 /* 
-  确认 rootFiber 是否需要调度
+  确认 hostRootFiber 是否需要调度
   通过新旧任务的优先级对比，判断是否需要注册新的task
   如果需要：
     根据优先级注册task，主要是执行performSyncWorkOnRoot，进入render和commit阶段
@@ -945,8 +945,8 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
 
     // We now have a consistent tree. The next step is either to commit it,
     // or, if something suspended, wait to commit it after a timeout.
-    // fiberRoot.current = rootFiber
-    // finishedWork = rootFiber.alternate
+    // fiberRoot.current = hostRootFiber
+    // finishedWork = hostRootFiber.alternate
     const finishedWork: Fiber = (root.current.alternate: any);
     root.finishedWork = finishedWork;
     root.finishedLanes = lanes;
@@ -1393,13 +1393,13 @@ export function popRenderLanes(fiber: Fiber) {
 /* 
   为FiberRoot 添加|重置 finishedWork和finishedLanes 属性
   将fiberRoot 赋值给 workInProgressRoot
-  创建 current rootFiber 对应的 workInProgress 的rootFiber，并赋值给workInProgress
-  即 rootFiber.alternate = workInProgress
-    workInProgress.alternate = rootFiber
+  创建 current hostRootFiber 对应的 workInProgress 的 hostRootFiber，并赋值给workInProgress
+  即 hostRootFiber.alternate = workInProgress
+    workInProgress.alternate = hostRootFiber
 
                     FiberRoot
             /       alternate        \
-    Current rootFiber ————> workInProgress rootFiber
+    Current hostRootFiber ————> workInProgress hostRootFiber.
 */
 function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   // 为FiberRoot 添加 finishedWork和finishedLanes 属性
