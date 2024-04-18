@@ -81,8 +81,8 @@ export const TotalLanes = 31;
 export const NoLanes: Lanes = /*                        */ 0b0000000000000000000000000000000;
 export const NoLane: Lane = /*                          */ 0b0000000000000000000000000000000;
 
-export const SyncLane: Lane = /*                        */ 0b0000000000000000000000000000001;
-export const SyncBatchedLane: Lane = /*                 */ 0b0000000000000000000000000000010;
+export const SyncLane: Lane = /* 1                      */ 0b0000000000000000000000000000001;
+export const SyncBatchedLane: Lane = /* 2                */ 0b0000000000000000000000000000010;
 
 export const InputDiscreteHydrationLane: Lane = /*      */ 0b0000000000000000000000000000100;
 export const InputDiscreteLane: Lanes = /*              */ 0b0000000000000000000000000001000;
