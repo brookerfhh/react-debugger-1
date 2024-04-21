@@ -551,7 +551,7 @@ export function scheduleUpdateOnFiber(
   }
 
   // Mark that the root has a pending update.
-  // 在root上标记更新，将update的lane放到root.pendingLanes
+  // 在fiberRoot上标记更新，将update的lane放到fiberRoot.pendingLanes
   markRootUpdated(root, lane, eventTime);
 
   if (enableProfilerTimer && enableProfilerNestedUpdateScheduledHook) {
@@ -1612,9 +1612,11 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
   // and prepare a fresh one. Otherwise we'll continue where we left off.
   // 判断条件为true 说明是 首次渲染 || 发生了任务的打断，
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
-    // prepareFreshStack 为 取消之前构建的workInProgress，重置workInProgress
-    // 初始化 或 重置root的finishedWork 和 finishedLanes属性
-    // 构建workInProgressRoot 和 构建 workInProgressRoot 的 rootFiber
+    /* 
+      为FiberRoot 添加|重置 finishedWork和finishedLanes 属性
+      将fiberRoot 赋值给 workInProgressRoot
+      创建 current rootFiber 对应的 workInProgress 的rootFiber，并赋值给workInProgress
+    */
     prepareFreshStack(root, lanes);
     startWorkOnPendingInteractions(root, lanes);
   }

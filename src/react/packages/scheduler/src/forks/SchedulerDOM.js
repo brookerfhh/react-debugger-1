@@ -114,6 +114,7 @@ if (typeof console !== 'undefined') {
   }
 }
 
+// 取出timerQueue的第一个task，根据当前时间判断是否将task 转入到 taskQueue 队列
 function advanceTimers(currentTime) {
   // Check for tasks that are no longer delayed and add them to the queue.
   let timer = peek(timerQueue);
@@ -200,6 +201,7 @@ function flushWork(hasTimeRemaining, initialTime) {
 
 function workLoop(hasTimeRemaining, initialTime) {
   let currentTime = initialTime; // 保存当前时间，用于判断任务是否过期
+  // 取出timerQueue的第一个task，根据当前时间判断是否将task 转入到 taskQueue 队列
   advanceTimers(currentTime);
   currentTask = peek(taskQueue); // 获取队列中的第一个任务
   while (
@@ -243,6 +245,7 @@ function workLoop(hasTimeRemaining, initialTime) {
           pop(taskQueue);
         }
       }
+      // 取出timerQueue的第一个task，根据当前时间判断是否将task 转入到 taskQueue 队列
       advanceTimers(currentTime);
     } else {
       // 如果任务被取消（这时currentTask.callback = null），将其移除队列
@@ -332,6 +335,7 @@ function unstable_wrapCallback(callback) {
   };
 }
 
+// 注册task 并请求调度执行task
 function unstable_scheduleCallback(priorityLevel, callback, options) {
   var currentTime = getCurrentTime();
   //  v17.0.2中调用unstable_scheduleCallback都没有传options，所以startTime 都等于 currentTime
@@ -540,6 +544,7 @@ function forceFrameRate(fps) {
   }
 }
 // 执行工作直到截止时间
+
 const performWorkUntilDeadline = () => {
   if (scheduledHostCallback !== null) {
     // 获取当前时间
