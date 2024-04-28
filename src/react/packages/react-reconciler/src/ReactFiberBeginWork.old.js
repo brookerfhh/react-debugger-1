@@ -266,7 +266,7 @@ export function reconcileChildren(
   }
   // current为当前fiber的alternate 所对应的currentFiber节点
   // 首次渲染时rootFiber有对应的currentFiber，所以else 里 reconcileChildFibers的逻辑，所以rootFiber的子节点会被打上Placement的标记
-  // 而rootFiber以下的节点 alternate 即 currentFiber都为空，所以mountChildFibers的逻辑，所以以下的子节点不会被打上标记
+  // 而hostRootFiber以下的节点 alternate 即 currentFiber都为空，所以mountChildFibers的逻辑，所以以下的子节点不会被打上标记
   if (current === null) {
     // 挂载
     // If this is a fresh new component that hasn't been rendered yet, we
@@ -288,7 +288,7 @@ export function reconcileChildren(
     // If we had any progressed work already, that is invalid at this point so
     // let's throw it out.
     // 新旧 Fiber对比
-    // mount时，rootFiber的current不为空，所以会在构建子节点时，给子节点的flags打上Placement的标记
+    // mount时，hostRootFiber的current不为空，所以会在构建子节点时，给子节点的flags打上Placement的标记
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,
@@ -1178,6 +1178,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
   // 上一次渲染使用的state
   const prevState = workInProgress.memoizedState;
   const prevChildren = prevState.element;
+  
   // 拷贝更新队列,把current.updateQueue 拷贝到 workInProgress.updateQueue
   cloneUpdateQueue(current, workInProgress);
   // 获取updateQueue.payload 赋值给 workInProgress.memoizedState

@@ -525,7 +525,7 @@ function requestRetryLane(fiber: Fiber) {
     不是同步模式
 */
 export function scheduleUpdateOnFiber(
-  fiber: Fiber, // 初始渲染时 为 hostRootFiber
+  fiber: Fiber, // 从哪个fiber开始调度，初始渲染时 为 hostRootFiber
   lane: Lane,
   eventTime: number,
 ): FiberRoot | null {
@@ -619,7 +619,6 @@ export function scheduleUpdateOnFiber(
       // Register pending interactions on the root to avoid losing traced interaction data.
       // 在根上注册挂起的交互以避免丢失跟踪的交互数据。
       schedulePendingInteractions(root, lane);
-
       // This is a legacy edge case. The initial mount of a ReactDOM.render-ed
       // root inside of batchedUpdates should be synchronous, but layout updates
       // should be deferred until the end of the batch.
@@ -1104,7 +1103,7 @@ function performSyncWorkOnRoot(root) {
 
   let lanes;
   let exitStatus;
-  console.info(11,root, workInProgressRoot)
+  console.log('%c进入render阶段====.', 'color: red;');
   // 首次渲染 workInProgressRoot为null，所以走else逻辑
   if (
     root === workInProgressRoot &&
@@ -1426,7 +1425,7 @@ function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   // 赋值为 FiberRoot
   workInProgressRoot = root;
   console.info('prepareFreshStack init workInProgressRoot = fiberRoot ', workInProgressRoot )
-  // 创建workInProgress树的rootFiber
+  // 创建workInProgress树的 hostRootFiber
   workInProgress = createWorkInProgress(root.current, null);
   // 初始化workInProgress的rootFiber的属性
   workInProgressRootRenderLanes = subtreeRenderLanes = workInProgressRootIncludedLanes = lanes;
@@ -1435,7 +1434,7 @@ function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   workInProgressRootSkippedLanes = NoLanes;
   workInProgressRootUpdatedLanes = NoLanes;
   workInProgressRootPingedLanes = NoLanes;
-
+  
   enqueueInterleavedUpdates();
 
   if (enableSchedulerTracing) {
@@ -1669,6 +1668,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
   // }
 
   if (enableSchedulingProfiler) {
+
     markRenderStopped();
   }
 
@@ -1688,7 +1688,6 @@ function workLoopSync() {
     performUnitOfWork(workInProgress);
   }
 }
-
 function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
   const prevExecutionContext = executionContext;
   executionContext |= RenderContext;

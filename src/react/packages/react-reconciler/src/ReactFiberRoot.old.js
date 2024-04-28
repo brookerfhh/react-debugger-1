@@ -109,7 +109,6 @@ export function createFiberRoot(
   root.current = uninitializedFiber;
   // hostRootFiber.stateNode => fiberRoot
   uninitializedFiber.stateNode = root;
-  debugger
   if (enableCache) {
     const initialCache = new Map();
     root.pooledCache = initialCache;

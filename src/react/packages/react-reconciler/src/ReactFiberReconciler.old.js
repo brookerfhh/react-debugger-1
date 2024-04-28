@@ -350,7 +350,7 @@ export function updateContainer(
     }
     update.callback = callback;
   }
-  // 将update任务对象 加入到当前Fiber即rootFiber的更新队列当中，即updateQueue
+  // 将update任务对象 加入到当前Fiber即 hostRootFiber的更新队列当中，即updateQueue
   // 待执行的任务都会被存储在fiber.updateQueue.shared.pending
   enqueueUpdate(current, update, lane);
   console.info('enqueueUpdate after===', current, update)
