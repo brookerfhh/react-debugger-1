@@ -1364,6 +1364,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
 
     // Remaining cases are all treated as empty.
+    // 如果子元素是纯文本，返回null
     return deleteRemainingChildren(returnFiber, currentFirstChild);
   }
 
