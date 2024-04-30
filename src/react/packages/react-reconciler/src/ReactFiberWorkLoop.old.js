@@ -1165,8 +1165,9 @@ function performSyncWorkOnRoot(root) {
 
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
-  // root.current.alternate为刚构建好的workInProgress树 的rootFiber 赋值给finishedWork
-  const finishedWork: Fiber = (root.current.alternate: any);
+  // root.current.alternate为刚构建好的workInProgress树 的 hostRootFiber 赋值给finishedWork
+  // root = fiberRoot , finishedWork = hostRootFiber
+  const finishedWork: Fiber = (root.current.alternate: any); 
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
   // 进入commit 阶段

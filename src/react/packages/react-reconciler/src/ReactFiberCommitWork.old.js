@@ -292,7 +292,7 @@ export function commitBeforeMutationEffects(
   然后执行commitBeforeMutationEffects_complete
 */
 function commitBeforeMutationEffects_begin() {
-
+  // 第一个nextEffect 是 workInProgressFiber 的 hostRootFiber
   while (nextEffect !== null) {
     const fiber = nextEffect;
 
@@ -347,7 +347,7 @@ function commitBeforeMutationEffects_complete() {
         /* 
           主要是处理包含Snapshot flag的fiber， 主要处理两种类型的fiber
             ClassComponent，执行getSnapshotBeforeUpdate方法
-            HostRoot，即rootFiber，清空HostRoot挂载的内容，方便Mutation阶段渲染
+            HostRoot，即hostRootFiber，清空HostRoot挂载的内容，方便Mutation阶段渲染
         */
         commitBeforeMutationEffectsOnFiber(fiber);
       } catch (error) {
@@ -2015,7 +2015,7 @@ export function commitMutationEffects(
   renderPriorityLevel: LanePriority,
   firstChild: Fiber,
 ) {
-  // 设置第一个子元素
+  // 设置第一个子元素,即 hostRootFiber
   nextEffect = firstChild;
   // 开启循环 
   commitMutationEffects_begin(root, renderPriorityLevel);
