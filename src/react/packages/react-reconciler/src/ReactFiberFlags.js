@@ -19,7 +19,8 @@ export const PerformedWork = /*                */ 0b0000000000000000000001;
 // 当前fiber或者子孙fiber 存在 需要插入或移动的 HostComponent或HostText，即即主要是标记 插入或移动
 export const Placement = /*                    */ 0b0000000000000000000010; // 2
 // ClassComponent存在更新，且定义了componentDidMount或者componentDidUpdate方法；
-// HOSTComponent发生属性的变化；HostText发生内容的变化；FC定义了useLayoutEffect
+// HostComponent发生属性的变化；HostText发生内容的变化；
+// FC 组件执行了useLayoutEffect，useLayoutEffect mount/update 时打的标记都是 Update
 export const Update = /*                       */ 0b0000000000000000000100; // 4
 export const PlacementAndUpdate = /*           */ Placement | Update;// 6
 // 需要被删除
@@ -39,7 +40,7 @@ export const Ref = /*                          */ 0b0000000000000100000000;
     HostRoot，即rootFiber，清空HostRoot挂载的内容，方便Mutation阶段渲染
 */
 export const Snapshot = /*                     */ 0b0000000000001000000000;
-// FC 中定义了useEffect 且需要触发回调函数
+// useEffect mount / update 且需要触发回调函数
 export const Passive = /*                      */ 0b0000000000010000000000;
 export const Hydrating = /*                    */ 0b0000000000100000000000;
 export const HydratingAndUpdate = /*           */ Hydrating | Update;

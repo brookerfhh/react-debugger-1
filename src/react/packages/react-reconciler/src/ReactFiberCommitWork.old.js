@@ -2405,8 +2405,9 @@ function commitPassiveUnmountEffects_begin() {
         nextEffect = fiber;
       }
     }
-
+    
     if ((fiber.subtreeFlags & PassiveMask) !== NoFlags && child !== null) {
+      // 设置 child.return = fiber，目的是 确保 child的return 指向当前fiber
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
     } else {

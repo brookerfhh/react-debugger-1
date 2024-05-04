@@ -1961,7 +1961,8 @@ function commitRootImpl(root, renderPriorityLevel) {
       在提交阶段执行被标记为 "passive" 的副作用。
       深度优先遍历 Fiber 树中的节点，找到被标记为 "Passive" 的副作用的Fiber（即有useEffect的fiber节点），并按照顺序执行这些副作用，和副作用返回的回调函数。
       先执行上一次useEffect的回调函数执行完返回的函数
-      在执行本次的useEffect的回调函数 
+      在执行本次的useEffect的回调函数，
+      即执行 useEffect 的 unmount 和 mount
     */
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
@@ -2099,7 +2100,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     (finishedWork.flags &
       (BeforeMutationMask | MutationMask | LayoutMask | PassiveMask)) !==
     NoFlags;
-
+      console.info('subtreeHasEffects==', subtreeHasEffects, rootHasEffect)
   // 有副作用，执行更新，进入三个子阶段
   if (subtreeHasEffects || rootHasEffect) {
     // 保存之前的优先级，以同步优先级执行，执行完毕后恢复之前优先级
@@ -2336,6 +2337,7 @@ function commitRootImpl(root, renderPriorityLevel) {
   return null;
 }
 
+// 执行 useEffect的 unmount 和 mount
 export function flushPassiveEffects(): boolean {
   // Returns whether passive effects were flushed.
   if (pendingPassiveEffectsRenderPriority !== NoLanePriority) {
@@ -2367,7 +2369,7 @@ export function enqueuePendingPassiveProfilerEffect(fiber: Fiber): void {
     }
   }
 }
-
+// 执行 有useEffect 的 函数组件的 mount 和 unmount
 function flushPassiveEffectsImpl() {
   if (rootWithPendingPassiveEffects === null) {
     return false;
